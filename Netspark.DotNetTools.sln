@@ -5,7 +5,12 @@ VisualStudioVersion = 16.0.29519.181
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Netspark.CleanArchitecture.Scaffold", "Netspark.CleanArchitecture.Scaffold\Netspark.CleanArchitecture.Scaffold.csproj", "{24FF6FA1-B923-4CB6-8C8B-9100E03B734F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Netspark.CleanArchitecture.UnitTests", "Netspark.CleanArchitecture.UnitTests\Netspark.CleanArchitecture.UnitTests.csproj", "{7BBCE636-50E0-49CC-9680-4FC6F670C0F6}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Netspark.CleanArchitecture.UnitTests", "Netspark.CleanArchitecture.UnitTests\Netspark.CleanArchitecture.UnitTests.csproj", "{7BBCE636-50E0-49CC-9680-4FC6F670C0F6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{7BFC620E-E0A4-4B57-946B-810096B5A8F8}"
+	ProjectSection(SolutionItems) = preProject
+		README.md = README.md
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

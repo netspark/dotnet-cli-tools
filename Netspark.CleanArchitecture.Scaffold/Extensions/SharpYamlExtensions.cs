@@ -19,8 +19,12 @@ namespace Netspark.CleanArchitecture.Scaffold.Extensions
             yaml.Load(input);
 
             // Examine the stream
-            var config = new Serializer().Deserialize<YamlConfig>(yamlDoc.Split("---")[1]);
-            var root = (YamlMappingNode)yaml.Documents[1].RootNode;
+            var domainsIndex = yaml.Documents.Count - 1;
+            var config = domainsIndex == 1 
+                ? new Serializer().Deserialize<YamlConfig>(yamlDoc.Split("---")[1])
+                : new YamlConfig();
+
+            var root = (YamlMappingNode)yaml.Documents[domainsIndex].RootNode;
             config.Domains = GetNodeChildren(root, null);
 
             return config;

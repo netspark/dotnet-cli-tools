@@ -7,6 +7,23 @@
 		<ToolCommandName>cleanasc</ToolCommandName>
 		<PackageId>Netspark.CleanArchitecture.Scaffold</PackageId>
 		<PackageOutputPath>.nuget</PackageOutputPath>
+		<Authors>Gennadii Kostrov</Authors>
+		<Version>1.0.0</Version>
+		<Company>Netspark Clean Architecture</Company>
+		<Description>DotNetTool for scaffolding clean architecture commands and queries along with their test stubs according to the structure of the application presented in NorhwindTraders database on GitHub https://github.com/JasonGT/NorthwindTraders.git by architect Jason Taylor.</Description>
+		<Copyright>MIT Licence</Copyright>
+		<PackageLicenseFile>LICENSE</PackageLicenseFile>
+		<PackageProjectUrl></PackageProjectUrl>
+		<RepositoryUrl>https://github.com/netspark/dotnet-cli-tools.git</RepositoryUrl>
+		<RepositoryType>Git</RepositoryType>
+		<AssemblyVersion>1.0.0.1</AssemblyVersion>
+		<FileVersion>1.0.0.1</FileVersion>
+		<PackageTags>cleanasc, Clean Architecure, Code Generators, Scaffolders, Performance Tools, DotNetTools</PackageTags>
+		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+		<PackageIcon>CleanArchIcon.png</PackageIcon>
+		<PackageIconUrl />
+		<NeutralLanguage>en</NeutralLanguage>
 	</PropertyGroup>
 
   <ItemGroup>
@@ -48,6 +65,23 @@
     <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" />
     <PackageReference Include="Pluralize.NET.Core" Version="1.0.0" />
     <PackageReference Include="SharpYaml" Version="1.6.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\CleanArchIcon.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

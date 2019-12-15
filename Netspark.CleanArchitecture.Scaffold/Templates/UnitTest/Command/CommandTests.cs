@@ -4,17 +4,22 @@ using ApplicationNsPlaceholder.Common.Exceptions;
 using CommandNsPlaceholder;
 using ApplicationNsPlaceholder.UnitTests.Common;
 using Xunit;
+using Moq;
+using MediatR;
 
 namespace NamespacePlaceholder
 {
     public class FixturePlaceholder : CommandTestBase
     {
         private readonly HandlerPlaceholder _sut;
+        private readonly Mock<IMediator> _mediator;
 
         public FixturePlaceholder()
             : base()
         {
-            _sut = new HandlerPlaceholder(_context);
+
+            _mediator = new Mock<IMediator>();
+            _sut = new HandlerPlaceholder(_context, _mediator.Object);
         }
 
         [Fact]

@@ -11,25 +11,31 @@ namespace Netspark.CleanArchitecture.Scaffold
     {
         static void Main(string[] args)
         {
+            bool helpRequested = false;
             var parser = new FluentCommandLineParser<ScaffolderOptions>();
 
             parser.Setup(arg => arg.ConfigFile)
                 .As('c', "config-file")
                 .SetDefault("./cleanasc.yaml")
-                .WithDescription("Configuration file in yaml format for this tool");
+                .WithDescription("Configuration file in yaml format for this tool (absolute or relative to the command process working directory)");
 
             parser.Setup(arg => arg.OutputFolder)
                 .As('o', "output-folder")
                 .SetDefault("./")
-                .WithDescription("The root folder for commands/queries tree generation");
+                .WithDescription("The root folder for commands/queries tree generation (absolute or relative to the command process working directory)");
 
             parser.Setup(arg => arg.MergeStrategy)
                 .As('m', "merge-strategy")
                 .SetDefault(MergeStrategy.Skip)
-                .WithDescription("Merge strategy for the scaffolding: Append|Overwrite|Skip|Sync");
+                .WithDescription("Merge strategy for the scaffolding: Append|Overwrite|Skip");
 
             parser.SetupHelp("?", "help")
-             .Callback(text => Console.WriteLine(text));
+                .UseForEmptyArgs()
+                .Callback(text => 
+                {
+                    Console.WriteLine(text);
+                    helpRequested = true;
+                });
 
             var result = parser.Parse(args);
             if (result.HasErrors)
@@ -39,8 +45,13 @@ namespace Netspark.CleanArchitecture.Scaffold
                 return;
             }
 
-            var config = ReadYamlConfig(PathUtils.GetAbsolutePath(parser.Object.ConfigFile));
-            new Scaffolder(parser.Object, config, new VerbService()).Run();
+            var options = parser.Object;
+            if (!helpRequested)
+            {
+                var config = ReadYamlConfig(PathUtils.GetAbsolutePath(options.ConfigFile));
+                new Scaffolder(options, config, new VerbService())
+                    .Run();
+            }
         }
 
         private static YamlConfig ReadYamlConfig(string path)
