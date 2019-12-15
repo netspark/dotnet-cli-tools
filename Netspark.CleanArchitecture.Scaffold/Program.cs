@@ -1,8 +1,8 @@
 ﻿using Fclp;
 using Netspark.CleanArchitecture.Scaffold.Extensions;
+using Netspark.CleanArchitecture.Scaffold.Utils;
 using SharpYaml.Serialization;
 using System;
-using System.Collections.Generic;
 using System.IO;
 
 namespace Netspark.CleanArchitecture.Scaffold
@@ -13,12 +13,10 @@ namespace Netspark.CleanArchitecture.Scaffold
         {
             var parser = new FluentCommandLineParser<ScaffolderOptions>();
 
-            YamlConfig config = null; 
             parser.Setup(arg => arg.ConfigFile)
                 .As('c', "config-file")
                 .SetDefault("./cleanasc.yaml")
-                .WithDescription("Configuration file in yaml format for this tool")
-                .Callback(p => config = ReadYamlConfig(p));
+                .WithDescription("Configuration file in yaml format for this tool");
 
             parser.Setup(arg => arg.OutputFolder)
                 .As('o', "output-folder")
@@ -41,7 +39,8 @@ namespace Netspark.CleanArchitecture.Scaffold
                 return;
             }
 
-            new Scaffolder(parser.Object).Run(config);
+            var config = ReadYamlConfig(PathUtils.GetAbsolutePath(parser.Object.ConfigFile));
+            new Scaffolder(parser.Object, config, new VerbService()).Run();
         }
 
         private static YamlConfig ReadYamlConfig(string path)
@@ -55,64 +54,5 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             return config;
         }
-    }
-
-    public class ScaffolderOptions
-    {
-        public string ConfigFile { get; set; }
-        public string OutputFolder { get; set; }
-        public MergeStrategy MergeStrategy { get; set; }
-    }
-
-    public class YamlConfig
-    {
-        public string Namespace { get; set; } = "FaceFK";
-        public string SrcPath { get; set; } = "./Src";
-        public string TestsPath { get; set; } = "./Tests";
-
-        public IList<AppNode> Domains { get; set; } = new List<AppNode>();
-    }
-   
-    public enum MergeStrategy
-    {
-        Append,
-        Overwrite,
-        Skip,
-        Sync
-    }
-
-    public class AppNode
-    {
-        public string Name { get; set; }
-        public YamlNodeType Type { get; set; }
-        public IList<AppNode> Children { get; set; } = new List<AppNode>();
-        public AppNode Parent { get; set; }
-
-        public string GetFullPath()
-        {
-            var sb = new Stack<string>();
-            sb.Push(Name);
-
-            var node = this;
-            while (node.Parent != null)
-            {
-                node = node.Parent;
-                sb.Push(node.Name);
-            }
-
-            return Path.Combine(sb.ToArray());
-        }
-
-        public override string ToString()
-        {
-            return Name;
-        }
-    }
-
-    public enum YamlNodeType
-    {
-        Folder,
-        Command,
-        Query
     }
 }

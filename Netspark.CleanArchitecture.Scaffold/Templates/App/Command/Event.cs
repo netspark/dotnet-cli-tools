@@ -21,7 +21,7 @@ namespace NamespacePlaceholder
 
             public async Task Handle(EventPlaceholder notification, CancellationToken cancellationToken)
             {
-                await _notification.SendAsync(new MessageDto());
+                //await _notification.SendAsync(new MessageDto());
             }
         }
     }
