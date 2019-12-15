@@ -11,7 +11,7 @@
 		<Version>1.0.0</Version>
 		<Company>Netspark Clean Architecture</Company>
 		<Description>DotNetTool for scaffolding clean architecture commands and queries along with their test stubs according to the structure of the application presented in NorhwindTraders database on GitHub https://github.com/JasonGT/NorthwindTraders.git by architect Jason Taylor.</Description>
-		<Copyright>MIT Licence</Copyright>
+		<Copyright>MIT License</Copyright>
 		<PackageLicenseFile>LICENSE</PackageLicenseFile>
 		<PackageProjectUrl></PackageProjectUrl>
 		<RepositoryUrl>https://github.com/netspark/dotnet-cli-tools.git</RepositoryUrl>
