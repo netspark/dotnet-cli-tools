@@ -26,8 +26,8 @@ namespace Netspark.CleanArchitecture.Scaffold
             var templates = LoadTemplates();
             foreach(var domainNode in _config.Domains)
             {
-                var commands = domainNode.Children.FirstOrDefault(c => c.Name == "Commands")?.Children;
-                var queries = domainNode.Children.FirstOrDefault(c => c.Name == "Queries")?.Children;
+                var commands = domainNode.FindCommands();
+                var queries = domainNode.FindQueries();
 
                 var commandFiles = GenerateCommands(commands, templates);
                 var queryFiles = GenerateQueries(queries, templates);
@@ -245,7 +245,7 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             var namespacePlaceholder = $"{_config.Namespace}.Application.{queryNode.GetFullPath(".")}";
             var queryPlaceholder = $"{queryNode.Name}Query";
-            var vmPlaceholder = $"{queryNode.Name}Vm";
+            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
 
             template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
             template.SetParameter(TemplateParameterType.QueryPlaceholder, queryPlaceholder);
@@ -404,11 +404,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var persistNsPlaceholder = $"{_config.Namespace}.Persistence";
             var queryNsPlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var namespacePlaceholder = $"{appNsPlaceholder}.UnitTests.{queryNode.Parent.GetFullPath(".")}";
-
-            var vmPlaceholder = queryNode.Name.StartsWith("Get") 
-                ? queryNode.Name.Substring("Get".Length) 
-                : queryNode.Name;
-            vmPlaceholder = $"{vmPlaceholder}Vm";
+            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
 
             template.SetParameter(TemplateParameterType.QueryNsPlaceholder, queryNsPlaceholder);
             template.SetParameter(TemplateParameterType.ApplicationNsPlaceholder, appNsPlaceholder);

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 
 namespace Netspark.CleanArchitecture.Scaffold
 {
@@ -22,6 +23,41 @@ namespace Netspark.CleanArchitecture.Scaffold
             }
 
             return string.Join(separator, sb.ToArray());
+        }
+
+        public IList<AppNode> FindCommands()
+        {
+            var result = new List<AppNode>();
+            if (Name.Contains("Commands"))
+            { 
+                result.AddRange(Children); 
+            }
+            else
+            {
+                foreach(var child in Children)
+                {
+                    result.AddRange(child.FindCommands());
+                }
+            }
+            return result;
+        }
+
+        public IList<AppNode> FindQueries()
+        {
+            var result = new List<AppNode>();
+            if (Name.Contains("Queries"))
+            {
+                result.AddRange(Children);
+            }
+            else
+            {
+                foreach (var child in Children)
+                {
+                    result.AddRange(child.FindQueries());
+                }
+            }
+            return result;
+
         }
 
         public override string ToString()
