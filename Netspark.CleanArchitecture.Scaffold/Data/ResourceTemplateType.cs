@@ -17,7 +17,19 @@
         AppListHandler,
         AppListVm,
 
+        WebController,
+        WebControllerGet,
+        WebControllerCommand,
+        WebControllerCreate,
+        WebControllerUpdate,
+        WebControllerDelete,
+
+
         UnitTestCommand,
-        UnitTestQuery
+        UnitTestQuery,
+
+        IntegrationTestQuery,
+        IntegrationTestCommand,
+
     }
 }

@@ -1,5 +1,5 @@
 # Netspark.CleanArchitecture.Scaffolder
-This is a dotnet tool for generating clean architecture commands and queries along with respective unit test stubs.
+This is a dotnet tool for generating clean architecture commands, queries controllers along with respective unit and integration test stubs.
 
 ## CLI Options
 ```
@@ -48,6 +48,7 @@ Namespace: NorthwindTraders
 DbContext: NorthwindDbContext
 SrcPath: ./Src
 TestsPath: ./Tests
+ApiUrlPrefix: api/v1
 
 # Domains
 ---

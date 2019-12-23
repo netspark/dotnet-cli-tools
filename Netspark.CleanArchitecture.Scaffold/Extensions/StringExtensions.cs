@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace Netspark.CleanArchitecture.Scaffold.Extensions
@@ -29,5 +30,13 @@ namespace Netspark.CleanArchitecture.Scaffold.Extensions
 
 			return sb.ToString().Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 		}
+
+
+		public static bool EndsWithAny(this string s, params string[] suffixes) =>
+			suffixes?.Any(p => s?.EndsWith(p) ?? false) ?? false;
+
+		public static bool StartsWithAny(this string s, params string[] prefixes) =>
+			prefixes?.Any(p => s?.StartsWith(p) ?? false) ?? false;
+
 	}
 }

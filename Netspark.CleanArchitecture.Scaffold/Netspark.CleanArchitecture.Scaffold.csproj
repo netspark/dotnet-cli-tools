@@ -8,7 +8,7 @@
 		<PackageId>Netspark.CleanArchitecture.Scaffold</PackageId>
 		<PackageOutputPath>.nuget</PackageOutputPath>
 		<Authors>Gennadii Kostrov</Authors>
-		<Version>1.0.3</Version>
+		<Version>1.1.4</Version>
 		<Company>Netspark Clean Architecture</Company>
 		<Description>DotNetTool for scaffolding clean architecture commands and queries along with their test stubs according to the structure of the application presented in NorhwindTraders database on GitHub https://github.com/JasonGT/NorthwindTraders.git by architect Jason Taylor.</Description>
 		<Copyright>MIT License</Copyright>
@@ -16,17 +16,17 @@
 		<PackageProjectUrl></PackageProjectUrl>
 		<RepositoryUrl>https://github.com/netspark/dotnet-cli-tools.git</RepositoryUrl>
 		<RepositoryType>Git</RepositoryType>
-		<AssemblyVersion>1.0.3.1</AssemblyVersion>
-		<FileVersion>1.0.3.1</FileVersion>
+		<AssemblyVersion>1.1.4.1</AssemblyVersion>
+		<FileVersion>1.1.4.1</FileVersion>
 		<PackageTags>cleanasc, Clean Architecure, Code Generators, Scaffolders, Performance Tools, DotNetTools</PackageTags>
 		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
 		<PackageIcon>CleanArchIcon.png</PackageIcon>
 		<PackageIconUrl />
 		<NeutralLanguage>en</NeutralLanguage>
-		<PackageReleaseNotes>- Fixed query vm naming error
-- Referenced System.Collections.Generic in the handler template
-- Commands and Queries can have any nesting level</PackageReleaseNotes>
+		<PackageReleaseNotes>- Controllers and integration tests are generated for each entity (inferred from query name)
+- Fixed usings template generator issues
+- Fixed integration test generator issues</PackageReleaseNotes>
 	</PropertyGroup>
 
   <ItemGroup>
@@ -43,8 +43,15 @@
     <Compile Remove="Templates\App\Query\List\Vm.cs" />
     <Compile Remove="Templates\App\Query\Query.cs" />
     <Compile Remove="Templates\App\Query\Validator.cs" />
+    <Compile Remove="Templates\IntegrationTest\Query\QueryTestsIntegration.cs" />
     <Compile Remove="Templates\UnitTest\Command\CommandTests.cs" />
     <Compile Remove="Templates\UnitTest\Query\QueryTests.cs" />
+    <Compile Remove="Templates\Web\Controller\Class.cs" />
+    <Compile Remove="Templates\Web\Controller\Command.cs" />
+    <Compile Remove="Templates\Web\Controller\Create.cs" />
+    <Compile Remove="Templates\Web\Controller\Delete.cs" />
+    <Compile Remove="Templates\Web\Controller\Get.cs" />
+    <Compile Remove="Templates\Web\Controller\Update.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -59,8 +66,15 @@
     <EmbeddedResource Include="Templates\App\Query\List\Dto.cs" />
     <EmbeddedResource Include="Templates\App\Query\List\Handler.cs" />
     <EmbeddedResource Include="Templates\App\Query\List\Vm.cs" />
+    <EmbeddedResource Include="Templates\IntegrationTest\Query\QueryTestsIntegration.cs" />
     <EmbeddedResource Include="Templates\UnitTest\Command\CommandTests.cs" />
     <EmbeddedResource Include="Templates\UnitTest\Query\QueryTests.cs" />
+    <EmbeddedResource Include="Templates\Web\Controller\Class.cs" />
+    <EmbeddedResource Include="Templates\Web\Controller\Delete.cs" />
+    <EmbeddedResource Include="Templates\Web\Controller\Command.cs" />
+    <EmbeddedResource Include="Templates\Web\Controller\Update.cs" />
+    <EmbeddedResource Include="Templates\Web\Controller\Create.cs" />
+    <EmbeddedResource Include="Templates\Web\Controller\Get.cs" />
   </ItemGroup>
 
   <ItemGroup>

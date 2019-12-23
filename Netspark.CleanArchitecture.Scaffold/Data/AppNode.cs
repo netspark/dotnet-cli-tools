@@ -1,12 +1,38 @@
-﻿using System.Collections.Generic;
+﻿using Netspark.CleanArchitecture.Scaffold.Extensions;
+using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Netspark.CleanArchitecture.Scaffold
 {
     public class AppNode
     {
-        public string Name { get; set; }
-        public YamlNodeType Type { get; set; }
+        public static string[] ListQueryPrefixes = { "GetAll" };
+        public static string[] BoolQueryPrefixes = { 
+            "Can", "Could", "Is", "Are", 
+            "Should", "Would", "Will", 
+            "Has", "Have", "Had",
+            "May", "Might",
+
+        };
+        public static string[] InsertCommandPrefixes = { "Insert", "Upsert" };
+        public static string[] UpdateCommandPrefixes = { "Update", "Upsert", "Save" };
+        public static string[] DeleteCommandPrefixes = { "Delete", "Remove", "Drop", "Destroy", "Terminate" };
+
+        private string _name;
+        private string[] _nameWords = new string[] { };
+
+        public string Name
+        {
+            get { return _name; }
+            set
+            {
+                _name = value;
+                _nameWords = value.SplitIntoWords();
+            }
+        }
+
+        public string[] NameWords => _nameWords;
         public IList<AppNode> Children { get; set; } = new List<AppNode>();
         public AppNode Parent { get; set; }
 
@@ -29,12 +55,12 @@ namespace Netspark.CleanArchitecture.Scaffold
         {
             var result = new List<AppNode>();
             if (Name.Contains("Commands"))
-            { 
-                result.AddRange(Children); 
+            {
+                result.AddRange(Children);
             }
             else
             {
-                foreach(var child in Children)
+                foreach (var child in Children)
                 {
                     result.AddRange(child.FindCommands());
                 }
@@ -60,9 +86,62 @@ namespace Netspark.CleanArchitecture.Scaffold
 
         }
 
+        public string GetDomainName()
+        {
+            var node = this;
+            while (node.Parent != null)
+            {
+                node = node.Parent;
+            }
+
+            return node.Name;
+        }
+
+        public bool IsQuery => (this?.Parent.Name.Contains("Queries") ?? false) && Children.Count == 0;
+        public bool IsListQuery => IsQuery
+            && (Name.EndsWith("List")
+                || ListQueryPrefixes.Any(s => Name.StartsWith(s)));
+
+        public bool IsBoolQuery => IsQuery && BoolQueryPrefixes.Contains(_nameWords.First());
+
+        public bool IsCommand => (this?.Parent.Name.Contains("Commands") ?? false) && Children.Count == 0;
+
+        public bool IsInsertCommand => IsCommand && InsertCommandPrefixes.Contains(_nameWords.First());
+        public bool IsUpdateCommand => IsCommand && UpdateCommandPrefixes.Contains(_nameWords.First());
+        public bool IsDeleteCommand => IsCommand && DeleteCommandPrefixes.Contains(_nameWords.First());
+
+        public AppNodeType NodeType => DetectNodeType();
+
         public override string ToString()
         {
             return Name;
+        }
+
+        private AppNodeType DetectNodeType()
+        {
+            if (IsBoolQuery)
+                return AppNodeType.BoolQuery;
+
+            if (IsListQuery)
+                return AppNodeType.ListQuery;
+
+            if (IsQuery)
+                return AppNodeType.Query;
+
+            if (IsInsertCommand)
+                return AppNodeType.InsertCommand;
+
+            if (IsUpdateCommand)
+                return AppNodeType.UpdateCommand;
+
+            if (IsDeleteCommand)
+                return AppNodeType.DeleteCommand;
+
+            if (IsCommand)
+                return AppNodeType.Command;
+
+
+            return AppNodeType.Other;
         }
     }
 }

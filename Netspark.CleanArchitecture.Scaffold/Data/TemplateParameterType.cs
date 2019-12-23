@@ -6,8 +6,13 @@
         CommandNsPlaceholder,
         QueryNsPlaceholder,
         DomainNsPlaceholder,
+        InfrastructureNsPlaceholder,
         ApplicationNsPlaceholder,
+        WebNsPlaceholder,
         NamespacePlaceholder,
+
+        CommandsNsPlaceholder,
+        QueriesNsPlaceholder,
 
         CommandPlaceholder,
         QueryPlaceholder,
@@ -18,6 +23,10 @@
         HandlerPlaceholder,
         ValidatorPlaceholder,
         FixturePlaceholder,
+        UrlPlaceholder,
 
+        ControllerPlaceholder,
+        ActionsPlaceholder,
+        RoutePlaceholder
     }
 }

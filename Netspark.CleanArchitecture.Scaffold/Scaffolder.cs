@@ -33,11 +33,14 @@ namespace Netspark.CleanArchitecture.Scaffold
                 var queryFiles = GenerateQueries(queries, templates);
                 var commandTestFiles = GenerateCommandTests(commands, templates);
                 var queryTestFiles = GenerateQueryTests(queries, templates);
+                var controllerFiles = GenerateControllers(domainNode, templates);
 
                 SaveFiles(commandFiles, _config);
                 SaveFiles(queryFiles, _config);
                 SaveFiles(commandTestFiles, _config);
                 SaveFiles(queryTestFiles, _config);
+                SaveFiles(controllerFiles, _config);
+
             }
         }
 
@@ -51,6 +54,8 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             // set output folder
             config.OutputFolder = GetRootedPath(options.OutputFolder);
+
+            config.ApiUrlPrefix = config.ApiUrlPrefix?.TrimEnd('/');
 
             return config;
         }
@@ -110,6 +115,18 @@ namespace Netspark.CleanArchitecture.Scaffold
         }
 
         #region Generation
+
+        private IDictionary<string, string> GenerateControllers(AppNode domainNode, IDictionary<ResourceTemplateType, ResourceTemplate> templates)
+        {
+            var result = new Dictionary<string, string>();
+
+            var template = GetControllerTemplate(templates, domainNode);
+            var path = $"{domainNode.Name}/{domainNode.Name}Controller.cs";
+            result[path] = template.GetReplacedContent();
+
+            return result;
+        }
+
         private IDictionary<string, string> GenerateQueryTests(IList<AppNode> queries, IDictionary<ResourceTemplateType, ResourceTemplate> templates)
         {
             var result = new Dictionary<string, string>();
@@ -118,7 +135,8 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             foreach (var queryNode in queries)
             {
-                AddQueryTestTemplate(templates, result, queryNode);
+                AddQueryUnitTestTemplate(templates, result, queryNode);
+                AddQueryIntegrationTestTemplate(templates, result, queryNode);
             }
             return result;
         }
@@ -131,7 +149,7 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             foreach (var cmdNode in commands)
             {
-                AddCommandTestTemplate(templates, result, cmdNode);
+                AddCommandUnitTestTemplate(templates, result, cmdNode);
             }
             return result;
         }
@@ -176,6 +194,200 @@ namespace Netspark.CleanArchitecture.Scaffold
                 AddEventTemplate(templates, result, cmdNode);
             }
             return result;
+        }
+
+        private string GetUsingsPlaceholder(IEnumerable<AppNode> operations)
+        {
+            var usings = new HashSet<string>();
+            foreach(var operation in operations)
+            {
+                usings.Add($"using {_config.Namespace}.Application.{operation.GetFullPath(".")};");
+                usings.Add($"using {_config.Namespace}.Application.{operation.Parent.GetFullPath(".")};");
+            }
+
+            return string.Join(Environment.NewLine, usings.OrderBy(u => u));
+        }
+
+        private ResourceTemplate GetControllerTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode domainNode)
+        {
+            var template = templates[ResourceTemplateType.WebController];
+            template.ResetParameters();
+
+            var queries = domainNode.FindQueries();
+            var commands = domainNode.FindCommands();
+
+            var queriesNsPlaceholder = GetUsingsPlaceholder(queries);
+            var commandsNsPlaceholder = GetUsingsPlaceholder(commands);
+
+            var webNsPlaceholder = $"{_config.Namespace}.WebUI";
+            var namespacePlaceholder = $"{webNsPlaceholder}.Controllers.{domainNode.Name}";
+
+            var controllerPlaceholder = $"{domainNode.Name}Controller";
+            var actionsPlaceholder = GetActionsPlaceholder(templates, domainNode);
+
+            template.SetParameter(TemplateParameterType.CommandsNsPlaceholder, commandsNsPlaceholder);
+            template.SetParameter(TemplateParameterType.QueriesNsPlaceholder, queriesNsPlaceholder);
+            template.SetParameter(TemplateParameterType.WebNsPlaceholder, webNsPlaceholder);
+
+            template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
+            template.SetParameter(TemplateParameterType.ControllerPlaceholder, controllerPlaceholder);
+            template.SetParameter(TemplateParameterType.ActionsPlaceholder, actionsPlaceholder);
+
+            return template;
+        }
+
+        private string GetActionsPlaceholder(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode domainNode)
+        {
+            var pluralizer = new Pluralizer();
+            var singular = pluralizer.Singularize(domainNode.Name);
+            var plural = pluralizer.Pluralize(domainNode.Name);
+
+            var actions = domainNode.FindCommands()
+                .Union(domainNode.FindQueries())
+                .Select(c =>
+                {
+                    var group = GetActionGroup(c, pluralizer);
+                    return new ControllerActionGroup
+                    {
+                        Node = c,
+                        Cut = group.Cut,
+                        Sort = group.Plural.Replace(plural, ""),
+                        Singular = group.Singular,
+                        Plural = group.Plural,
+                        DomainSingular = singular,
+                        DomainPlural = plural
+                    };
+                })
+                .GroupBy(a => a.Plural)
+                // treat entity with domain name as primary
+                .OrderBy(g => g.Key.Replace(plural, ""));
+
+            var sb = new StringBuilder();
+            foreach(var actionGroup in actions)
+            {
+                foreach(var action in actionGroup.OrderBy(a => a.Node.IsCommand).ThenBy(a => a.Node.Name))
+                {
+                    var template = GetActionTemplate(templates, action);
+                    sb.Append(template.GetReplacedContent());
+                }
+            }
+
+            return sb.ToString();
+        }
+
+        private ResourceTemplate GetActionTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, ControllerActionGroup action)
+        {
+            switch (action.Node.NodeType)
+            {
+                case AppNodeType.Query:
+                case AppNodeType.ListQuery:
+                case AppNodeType.BoolQuery:
+                    return GetQueryActionTemplate(templates, action);
+                case AppNodeType.Command:
+                    return GetCommandActionTemplate(templates, action, ResourceTemplateType.WebControllerCommand);
+                case AppNodeType.InsertCommand:
+                    return GetCommandActionTemplate(templates, action, ResourceTemplateType.WebControllerCreate);
+                case AppNodeType.UpdateCommand:
+                    return GetCommandActionTemplate(templates, action, ResourceTemplateType.WebControllerUpdate);
+                case AppNodeType.DeleteCommand:
+                    return GetCommandActionTemplate(templates, action, ResourceTemplateType.WebControllerDelete);
+                default:
+                    return null;
+            }
+        }
+
+        private ResourceTemplate GetCommandActionTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, ControllerActionGroup action, ResourceTemplateType type)
+        {
+            var template = templates[type];
+            template.ResetParameters();
+
+            var routePlaceholder = GetCommandRoutePlaceholder(action.Node, action.DomainPlural, action.DomainSingular);
+
+            template.SetParameter(TemplateParameterType.RoutePlaceholder, routePlaceholder);
+            template.SetParameter(TemplateParameterType.CommandPlaceholder, action.Node.Name);
+
+            return template;
+        }
+
+        private ResourceTemplate GetQueryActionTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, ControllerActionGroup action)
+        {
+            var template = templates[ResourceTemplateType.WebControllerGet];
+            template.ResetParameters();
+
+            var routePlaceholder = GetQueryRoutePlaceholder(action.Node, action.DomainPlural, action.DomainSingular);
+            var vmPlaceholder = $"{GetQueryBaseName(action.Node, trimGet: true)}Vm";
+
+            template.SetParameter(TemplateParameterType.RoutePlaceholder, routePlaceholder);
+            template.SetParameter(TemplateParameterType.QueryPlaceholder, action.Node.Name);
+            template.SetParameter(TemplateParameterType.VmPlaceholder, vmPlaceholder);
+
+            return template;
+        }
+
+        private static string GetCommandRoutePlaceholder(AppNode node, string domainPlural, string domainSingular)
+        {
+            var baseName = node.Name;
+            var words = baseName.SplitIntoWords();
+            var parts = words.Skip(1)
+                             .Select(w => w == domainPlural
+                                            || w == domainSingular
+                                         ? "/"
+                                         : $"{w.ToLower()}-")
+                             .ToList();
+
+            parts.Add("/");
+            parts.Add(words[0].ToLower());
+
+            return CleanRoutePlaceholder(parts);
+        }
+
+        private static string GetQueryRoutePlaceholder(AppNode node, string domainPlural, string domainSingular)
+        {
+            var baseName = GetQueryBaseName(node, trimGet: true);
+            var words = baseName.SplitIntoWords()
+                                .Select(w => w == domainPlural 
+                                            || w == domainSingular
+                                         ? "/" 
+                                         : $"{w.ToLower()}-");
+
+            return CleanRoutePlaceholder(words);
+        }
+
+        private static string CleanRoutePlaceholder(IEnumerable<string> words)
+        {
+            var routePlaceholder = string.Join("", words)
+                .Replace("-/", "/")
+                .TrimEnd('-', '/')
+                .TrimStart('/');
+
+            return routePlaceholder;
+        }
+
+
+        private (string Cut, string Singular, string Plural) GetActionGroup(AppNode action, Pluralizer pluralizer = null)
+        {
+            pluralizer = pluralizer ?? new Pluralizer();
+            switch (action.NodeType)
+            {
+               case AppNodeType.Query:
+               case AppNodeType.ListQuery:
+                    var cut = GetQueryBaseName(action, trimGet: true, trimList: true);
+                    return (cut, pluralizer.Singularize(cut), pluralizer.Pluralize(cut));
+                case AppNodeType.BoolQuery:
+                    // Is... supposed form: Question + Entity + Adjectives
+                    // others supposed form: Question + Action + Entity
+                    cut = string.Join("", action.NameWords.Skip(2));
+                    return (cut, pluralizer.Singularize(cut), pluralizer.Pluralize(cut));
+                case AppNodeType.Command:
+                case AppNodeType.InsertCommand:
+                case AppNodeType.UpdateCommand:
+                case AppNodeType.DeleteCommand:
+                    // supposed form: Action + Entity
+                    cut = string.Join("", action.NameWords.Skip(1));
+                    return (cut, pluralizer.Singularize(cut), pluralizer.Pluralize(cut));
+                default:
+                    return (null, null, null);
+            }
         }
 
         private string AddDtoTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode queryNode)
@@ -387,10 +599,10 @@ namespace Netspark.CleanArchitecture.Scaffold
             return trim;
         }
 
-        private string AddQueryTestTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode cmdNode)
+        private string AddQueryUnitTestTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode queryNode)
         {
-            var path = $"{cmdNode.Parent.GetFullPath()}/{cmdNode.Name}QueryTests.cs";
-            var template = GetQueryTestTemplate(templates, cmdNode);
+            var path = $"{queryNode.Parent.GetFullPath()}/{queryNode.Name}QueryTests.cs";
+            var template = GetQueryTestTemplate(templates, queryNode);
             result[path] = template.GetReplacedContent();
             return path;
         }
@@ -420,7 +632,54 @@ namespace Netspark.CleanArchitecture.Scaffold
             return template;
         }
 
-        private string AddCommandTestTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode cmdNode)
+        private string AddQueryIntegrationTestTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode queryNode)
+        {
+            var path = $"Controllers/{queryNode.Parent.GetFullPath()}/{queryNode.Name}QueryIntegrationTest.cs";
+            var template = GetQueryIntegrationTemplate(templates, queryNode);
+            result[path] = template.GetReplacedContent();
+            return path;
+        }
+
+        private ResourceTemplate GetQueryIntegrationTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode queryNode)
+        {
+            var template = templates[ResourceTemplateType.IntegrationTestQuery];
+            template.ResetParameters();
+
+            var urlPlaceholder = GetQueryApiUrl(queryNode);
+            var appNsPlaceholder = $"{_config.Namespace}.Application";
+            var webNsPlaceholder = $"{_config.Namespace}.WebUI";
+            var queryNsPlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
+            var queriesNsPlaceholder = $"{appNsPlaceholder}.{queryNode.Parent.GetFullPath(".")}";
+            var namespacePlaceholder = $"{appNsPlaceholder}.IntegrationTests.Controllers.{queryNode.GetDomainName()}";
+            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
+
+            template.SetParameter(TemplateParameterType.QueryNsPlaceholder, queryNsPlaceholder);
+            template.SetParameter(TemplateParameterType.QueriesNsPlaceholder, queriesNsPlaceholder);
+            template.SetParameter(TemplateParameterType.WebNsPlaceholder, webNsPlaceholder);
+            template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
+
+            template.SetParameter(TemplateParameterType.QueryPlaceholder, queryNode.Name);// special case here without "Query" suffix
+            template.SetParameter(TemplateParameterType.FixturePlaceholder, $"{queryNode.Name}QueryTests");
+            template.SetParameter(TemplateParameterType.VmPlaceholder, vmPlaceholder);
+            template.SetParameter(TemplateParameterType.UrlPlaceholder, urlPlaceholder);
+
+            return template;
+        }
+
+        private string GetQueryApiUrl(AppNode queryNode)
+        {
+            var domain = queryNode.GetDomainName();
+            var pluralizer = new Pluralizer();
+            var route = GetQueryRoutePlaceholder(queryNode, pluralizer.Pluralize(domain), pluralizer.Singularize(domain));
+            var suffix = queryNode.IsListQuery ? "" : "1";
+            var url = $"{_config.ApiUrlPrefix}/{domain.ToLower()}/{route}/{suffix}"
+                        .TrimEnd('/')
+                        .Replace("//", "/");
+
+            return url;
+        }
+
+        private string AddCommandUnitTestTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode cmdNode)
         {
             var path = $"{cmdNode.Parent.GetFullPath()}/{cmdNode.Name}CommandTests.cs";
             var template = GetCommandTestTemplate(templates, cmdNode);
@@ -577,9 +836,30 @@ namespace Netspark.CleanArchitecture.Scaffold
 
         private string GetSaveFilePath(string baseFolder, string relativePath)
         {
-            bool isTest = relativePath.EndsWith("Tests.cs");
-            var subFolder = isTest ? "Application.UnitTests" : "Application";
-            var path = isTest ? _config.TestsPath : _config.SrcPath;
+            var saveType = GetSavePathType(relativePath);
+            string subFolder;
+            string path;
+            switch (saveType)
+            {
+                case SavePathType.Application:
+                    subFolder = "Application";
+                    path = _config.SrcPath;
+                    break;
+                case SavePathType.Controller:
+                    subFolder = @"WebUI\Controllers";
+                    path = _config.SrcPath;
+                    break;
+                case SavePathType.UnitTest:
+                    subFolder = "Application.UnitTests";
+                    path = _config.TestsPath;
+                    break;
+                case SavePathType.IntegrationTest:
+                    subFolder = "WebUI.IntegrationTests";
+                    path = _config.TestsPath;
+                    break;
+                default:
+                    throw new NotSupportedException(saveType.ToString());
+            }
 
             string result = PathUtils.GetAbsolutePath(baseFolder, path);
             result = Path.Combine(result, subFolder, relativePath);
@@ -592,6 +872,33 @@ namespace Netspark.CleanArchitecture.Scaffold
             return Path.IsPathRooted(path)
                 ? path
                 : PathUtils.GetAbsolutePath(path);
+        }
+
+        private static string[] _integrationSuffixes = 
+        { 
+            "TestsIntegration.cs", 
+            "TestIntegration.cs", 
+            "IntegrationTest.cs",
+            "IntegrationTests.cs"
+        };
+        private static string[] _unitSuffixes =
+        {
+            "Tests.cs",
+            "Test.cs",
+        };
+
+        private SavePathType GetSavePathType(string path)
+        {
+            if (path.EndsWithAny(_integrationSuffixes))
+                return SavePathType.IntegrationTest;
+
+            if (path.EndsWithAny(_unitSuffixes))
+                return SavePathType.UnitTest;
+
+            if (path.EndsWith("Controller.cs"))
+                return SavePathType.Controller;
+
+            return SavePathType.Application;
         }
 
         #endregion
@@ -642,6 +949,14 @@ namespace Netspark.CleanArchitecture.Scaffold
                     return reader.ReadToEnd();
                 }
             }
+        }
+
+        private enum SavePathType
+        {
+            Application,
+            Controller,
+            UnitTest,
+            IntegrationTest
         }
     }
 }

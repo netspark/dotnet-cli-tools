@@ -8,6 +8,7 @@ namespace Netspark.CleanArchitecture.Scaffold
         public string DbContext { get; set; } = "IFaceDbContext";
         public string SrcPath { get; set; } = "./Src";
         public string TestsPath { get; set; } = "./Tests";
+        public string ApiUrlPrefix { get; set; } = "api/v1";
 
         public string ConfigFolder { get; set; }
         public string OutputFolder { get; set; }

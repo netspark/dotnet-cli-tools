@@ -24,8 +24,16 @@ namespace Netspark.CleanArchitecture.Scaffold
             {"App.Query.List.Vm.cs", ResourceTemplateType.AppListVm },
             {"App.Query.List.Dto.cs", ResourceTemplateType.AppListDto },
 
+            {"Web.Controller.Class.cs", ResourceTemplateType.WebController },
+            {"Web.Controller.Get.cs", ResourceTemplateType.WebControllerGet },
+            {"Web.Controller.Command.cs", ResourceTemplateType.WebControllerCommand },
+            {"Web.Controller.Create.cs", ResourceTemplateType.WebControllerCreate },
+            {"Web.Controller.Update.cs", ResourceTemplateType.WebControllerUpdate },
+            {"Web.Controller.Delete.cs", ResourceTemplateType.WebControllerDelete },
+
             {"UnitTest.Command.CommandTests.cs", ResourceTemplateType.UnitTestCommand },
             {"UnitTest.Query.QueryTests.cs", ResourceTemplateType.UnitTestQuery },
+            {"IntegrationTest.Query.QueryTestsIntegration.cs", ResourceTemplateType.IntegrationTestQuery },
         };
 
         private readonly IDictionary<TemplateParameterType, string> Parameters;
