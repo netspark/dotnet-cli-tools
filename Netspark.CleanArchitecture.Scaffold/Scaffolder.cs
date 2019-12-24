@@ -650,7 +650,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var webNsPlaceholder = $"{_config.Namespace}.WebUI";
             var queryNsPlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var queriesNsPlaceholder = $"{appNsPlaceholder}.{queryNode.Parent.GetFullPath(".")}";
-            var namespacePlaceholder = $"{appNsPlaceholder}.IntegrationTests.Controllers.{queryNode.GetDomainName()}";
+            var namespacePlaceholder = $"{webNsPlaceholder}.IntegrationTests.Controllers.{queryNode.GetDomainName()}";
             var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
 
             template.SetParameter(TemplateParameterType.QueryNsPlaceholder, queryNsPlaceholder);
