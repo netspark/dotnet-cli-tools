@@ -24,7 +24,7 @@ namespace Netspark.CleanArchitecture.Scaffold
         public void Run()
         {
             var templates = LoadTemplates();
-            foreach(var domainNode in _config.Domains)
+            foreach (var domainNode in _config.Domains)
             {
                 var commands = domainNode.FindCommands();
                 var queries = domainNode.FindQueries();
@@ -186,7 +186,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             if (commands == null)
                 return result;
 
-            foreach(var cmdNode in commands)
+            foreach (var cmdNode in commands)
             {
                 AddCommandTemplate(templates, result, cmdNode);
                 AddCommandHandlerTemplate(templates, result, cmdNode);
@@ -199,7 +199,7 @@ namespace Netspark.CleanArchitecture.Scaffold
         private string GetUsingsPlaceholder(IEnumerable<AppNode> operations)
         {
             var usings = new HashSet<string>();
-            foreach(var operation in operations)
+            foreach (var operation in operations)
             {
                 usings.Add($"using {_config.Namespace}.Application.{operation.GetFullPath(".")};");
                 usings.Add($"using {_config.Namespace}.Application.{operation.Parent.GetFullPath(".")};");
@@ -263,9 +263,9 @@ namespace Netspark.CleanArchitecture.Scaffold
                 .OrderBy(g => g.Key.Replace(plural, ""));
 
             var sb = new StringBuilder();
-            foreach(var actionGroup in actions)
+            foreach (var actionGroup in actions)
             {
-                foreach(var action in actionGroup.OrderBy(a => a.Node.IsCommand).ThenBy(a => a.Node.Name))
+                foreach (var action in actionGroup.OrderBy(a => a.Node.IsCommand).ThenBy(a => a.Node.Name))
                 {
                     var template = GetActionTemplate(templates, action);
                     sb.Append(template.GetReplacedContent());
@@ -345,9 +345,9 @@ namespace Netspark.CleanArchitecture.Scaffold
         {
             var baseName = GetQueryBaseName(node, trimGet: true);
             var words = baseName.SplitIntoWords()
-                                .Select(w => w == domainPlural 
+                                .Select(w => w == domainPlural
                                             || w == domainSingular
-                                         ? "/" 
+                                         ? "/"
                                          : $"{w.ToLower()}-");
 
             return CleanRoutePlaceholder(words);
@@ -369,8 +369,8 @@ namespace Netspark.CleanArchitecture.Scaffold
             pluralizer = pluralizer ?? new Pluralizer();
             switch (action.NodeType)
             {
-               case AppNodeType.Query:
-               case AppNodeType.ListQuery:
+                case AppNodeType.Query:
+                case AppNodeType.ListQuery:
                     var cut = GetQueryBaseName(action, trimGet: true, trimList: true);
                     return (cut, pluralizer.Singularize(cut), pluralizer.Pluralize(cut));
                 case AppNodeType.BoolQuery:
@@ -846,7 +846,7 @@ namespace Netspark.CleanArchitecture.Scaffold
                     path = _config.SrcPath;
                     break;
                 case SavePathType.Controller:
-                    subFolder = @"WebUI\Controllers";
+                    subFolder = Path.Combine("WebUI", "Controllers");
                     path = _config.SrcPath;
                     break;
                 case SavePathType.UnitTest:
@@ -874,10 +874,10 @@ namespace Netspark.CleanArchitecture.Scaffold
                 : PathUtils.GetAbsolutePath(path);
         }
 
-        private static string[] _integrationSuffixes = 
-        { 
-            "TestsIntegration.cs", 
-            "TestIntegration.cs", 
+        private static string[] _integrationSuffixes =
+        {
+            "TestsIntegration.cs",
+            "TestIntegration.cs",
             "IntegrationTest.cs",
             "IntegrationTests.cs"
         };
@@ -929,7 +929,7 @@ namespace Netspark.CleanArchitecture.Scaffold
 
         private string GetQueryTestDbContext(string dbContext)
         {
-            if  (dbContext?.Length > 2)
+            if (dbContext?.Length > 2)
             {
                 return dbContext[0] == 'I' && char.IsUpper(dbContext[1])
                     ? dbContext.Substring(1)
@@ -944,7 +944,7 @@ namespace Netspark.CleanArchitecture.Scaffold
         {
             using (var s = GetType().Assembly.GetManifestResourceStream(name))
             {
-                using(var reader = new StreamReader(s))
+                using (var reader = new StreamReader(s))
                 {
                     return reader.ReadToEnd();
                 }
