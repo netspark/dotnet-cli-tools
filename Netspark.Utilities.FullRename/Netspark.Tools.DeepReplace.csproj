@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+      <OutputType>Exe</OutputType>
+      <TargetFramework>netcoreapp3.1</TargetFramework>
+      <PackAsTool>true</PackAsTool>
+      <ToolCommandName>deepreplace</ToolCommandName>
+      <PackageId>Netspark.Tools.DeepReplace</PackageId>
+      <PackageOutputPath>.nuget</PackageOutputPath>
+      <Authors>Gennadii Kostrov</Authors>
+      <Version>1.0.0</Version>
+      <Company>Netspark Tools</Company>
+      <Description>DotNetTool for deep replace of the phrase in the folder, which means replace content and file/folder names.</Description>
+      <Copyright>MIT License</Copyright>
+      <PackageLicenseFile>LICENSE</PackageLicenseFile>
+      <PackageProjectUrl></PackageProjectUrl>
+      <RepositoryUrl>https://github.com/netspark/dotnet-cli-tools.git</RepositoryUrl>
+      <RepositoryType>Git</RepositoryType>
+      <AssemblyVersion>1.0.0.1</AssemblyVersion>
+      <FileVersion>1.0.0.1</FileVersion>
+      <PackageTags>Deep replace</PackageTags>
+      <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+      <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+      <PackageIcon>DeepReplace.png</PackageIcon>
+      <PackageIconUrl />
+      <NeutralLanguage>en</NeutralLanguage>
+      <PackageReleaseNotes>
+        - Replace one phrase with another in folder names, file names and text file(s) content
+      </PackageReleaseNotes>
+    </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentCommandLineParser-netstandard" Version="1.4.3.13" />
+    <PackageReference Include="JetBrains.Annotations" Version="2019.1.3" />
+    <PackageReference Include="Ude.NetStandard" Version="1.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\DeepReplace.png">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="README.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

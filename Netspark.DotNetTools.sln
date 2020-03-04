@@ -12,6 +12,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Netspark.Tools.DeepReplace", "Netspark.Utilities.FullRename\Netspark.Tools.DeepReplace.csproj", "{9E03B597-BA02-4B68-AC07-46EDAB7D1084}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{7BBCE636-50E0-49CC-9680-4FC6F670C0F6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7BBCE636-50E0-49CC-9680-4FC6F670C0F6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7BBCE636-50E0-49CC-9680-4FC6F670C0F6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9E03B597-BA02-4B68-AC07-46EDAB7D1084}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9E03B597-BA02-4B68-AC07-46EDAB7D1084}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9E03B597-BA02-4B68-AC07-46EDAB7D1084}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9E03B597-BA02-4B68-AC07-46EDAB7D1084}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
