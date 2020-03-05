@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 
-namespace Netspark.Utilities.FullRename
+namespace Netspark.Tools.DeepReplace
 {
     public class ReplaceOptions
     {
@@ -17,20 +17,20 @@ namespace Netspark.Utilities.FullRename
             .Replace(".", "")
             .Split(',', ' ', ';')
             .Select(e => $".{e}")
-            .ToArray(); 
+            .ToArray();
 
         public bool Verbose { get; set; }
 
         public TargetType? GetTargetType() => File.Exists(Target)
-            ? FullRename.TargetType.File
-            : Directory.Exists(Target) 
-                ? FullRename.TargetType.Directory 
+            ? TargetType.File
+            : Directory.Exists(Target)
+                ? TargetType.Directory
                 : (TargetType?)null;
     }
 
     public enum TargetType
     {
-        File, 
+        File,
         Directory
     }
 }

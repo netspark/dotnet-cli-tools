@@ -3,7 +3,7 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace Netspark.Utilities.FullRename
+namespace Netspark.Tools.DeepReplace
 {
     class Program
     {
@@ -73,7 +73,7 @@ namespace Netspark.Utilities.FullRename
                 else
                 {
                     var (searches, replaces) = GetMultiterms(options);
-                    for(var i = 0; i < searches.Length; i++)
+                    for (var i = 0; i < searches.Length; i++)
                     {
                         options.Search = searches[i];
                         options.Replace = replaces[i];

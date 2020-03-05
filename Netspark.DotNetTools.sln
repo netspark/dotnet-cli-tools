@@ -12,7 +12,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		README.md = README.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Netspark.Tools.DeepReplace", "Netspark.Utilities.FullRename\Netspark.Tools.DeepReplace.csproj", "{9E03B597-BA02-4B68-AC07-46EDAB7D1084}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Netspark.Tools.DeepReplace", "Netspark.Tools.DeepReplace\Netspark.Tools.DeepReplace.csproj", "{9E03B597-BA02-4B68-AC07-46EDAB7D1084}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
