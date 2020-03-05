@@ -75,27 +75,45 @@ namespace Netspark.Utilities.FullRename
                 options.Target
             );
 
+            var supportedExtensions = options.ReplaceExtensions;
+
             foreach (var file in files)
             {
                 Console.WriteLine("Processing file '{0}'...", file);
-                var cdet = GetCharsetDetector(file);
 
-                if (cdet.Charset != null)
+                var ext = Path.GetExtension(file);
+                if (supportedExtensions.Contains(ext))
                 {
-                    Console.ForegroundColor = ConsoleColor.Green;
-                    Console.Write("Charset: {0}, confidence: {1}", cdet.Charset, cdet.Confidence);
-                    var encoding = Encoding.GetEncoding(cdet.Charset);
+                    var cdet = GetCharsetDetector(file);
 
-                    var content = await File.ReadAllTextAsync(file, encoding);
-                    content = Rename(file, search, replace, ignoreCase);
-                    await File.WriteAllTextAsync(file, content, encoding);
-                    Console.Write("Done.{0}", Environment.NewLine);
+                    if (cdet.Charset != null)
+                    {
+                        Console.ForegroundColor = ConsoleColor.Green;
+                        Console.Write("Charset: {0}, confidence: {1}... ", cdet.Charset, cdet.Confidence);
+                        var encoding = Encoding.GetEncoding(cdet.Charset);
 
+                        var original = await File.ReadAllTextAsync(file, encoding);
+                        var content = Rename(original, search, replace, ignoreCase);
+                        if (content != original)
+                        {
+                            await File.WriteAllTextAsync(file, content, encoding);
+                            Console.Write("Saving content... Done.{0}", Environment.NewLine);
+                        }
+                        else
+                        {
+                            Console.Write("Done.{0}", Environment.NewLine);
+                        }
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Charset detection failed, skipping...");
+                    }
                 }
                 else
                 {
                     Console.ForegroundColor = ConsoleColor.Yellow;
-                    Console.WriteLine("Charset detection failed, skipping...");
+                    Console.WriteLine("File extension '{0}' not listed. Done", ext);
                 }
 
                 Console.ResetColor();
@@ -170,20 +188,18 @@ namespace Netspark.Utilities.FullRename
 
         private static string[] GetDirectories(string target, string search, bool ignoreCase)
         {
-            var options = new EnumerationOptions
-            {
-                RecurseSubdirectories = true,
-                ReturnSpecialDirectories = false,
-                MatchCasing = ignoreCase
-                    ? MatchCasing.CaseInsensitive
-                    : MatchCasing.CaseSensitive,
-                MatchType = MatchType.Simple
-            };
+            var comparison = ignoreCase
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.InvariantCulture;
+
+            EnumerationOptions options = GetOptions(ignoreCase);
 
             // sort by top to bottom
+            var sep = Path.DirectorySeparatorChar.ToString();
             var directories = Directory
-                .GetDirectories(target, $"*{search}*", options)
-                .OrderBy(f => Regex.Matches(f, Path.DirectorySeparatorChar.ToString()).Count)
+                .GetDirectories(target, "*", options)
+                .Where(f => f.Contains(search, comparison))
+                .OrderBy(f => Regex.Matches(f, Regex.Escape(sep)).Count)
                 .ThenBy(f => f)
                 .ToArray();
             return directories;
@@ -191,12 +207,18 @@ namespace Netspark.Utilities.FullRename
 
         private static string[] GetFiles(string target, string search, bool ignoreCase)
         {
+            var comparison = ignoreCase
+                    ? StringComparison.OrdinalIgnoreCase
+                    : StringComparison.InvariantCulture;
+
             EnumerationOptions options = GetOptions(ignoreCase);
 
             // sort by top to bottom
+            var sep = Path.DirectorySeparatorChar.ToString();
             var files = Directory
-                .GetFiles(target, $"*{search}*", options)
-                .OrderBy(f => Regex.Matches(f, Path.DirectorySeparatorChar.ToString()).Count)
+                .GetFiles(target, "*.*", options)
+                //.Where(f => f.Contains(search, comparison))
+                .OrderBy(f => Regex.Matches(f, Regex.Escape(sep)).Count)
                 .ThenBy(f => f)
                 .ToArray();
 
@@ -234,12 +256,30 @@ namespace Netspark.Utilities.FullRename
 
         private string RenameFile(string target, string search, string replace, bool ignoreCase)
         {
-            return Rename(target, search, replace, ignoreCase, (o,n) => File.Move(o, n));
+            return Rename(target, search, replace, ignoreCase, (o, n) =>
+            {
+                if (!File.Exists(n))
+                    File.Move(o, n);
+                else
+                {
+                    Console.WriteLine("Cannot rename {0} to {1} because target already exists!", o, n);
+                    //Console.ReadKey();
+                }
+            });
         }
 
         private string RenameDir(string target, string search, string replace, bool ignoreCase)
         {
-            return Rename(target, search, replace, ignoreCase, (o, n) => Directory.Move(o, n));
+            return Rename(target, search, replace, ignoreCase, (o, n) =>
+            {
+                if (!Directory.Exists(n))
+                    Directory.Move(o, n);
+                else
+                {
+                    Console.WriteLine("Cannot rename {0} to {1} because target already exists!", o, n);
+                    //Console.ReadKey();
+                }
+            });
         }
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 
 namespace Netspark.Utilities.FullRename
 {
@@ -8,8 +9,15 @@ namespace Netspark.Utilities.FullRename
         public string Search { get; set; }
         public string Replace { get; set; }
         public bool IgnoreCase { get; set; }
+        public bool Multiterm { get; set; }
 
-        public string[] ReplaceExtensions = { }; 
+        public string Extensions { get; set; } = "cs csproj sln md ps1 sh json cshtml";
+
+        public string[] ReplaceExtensions => Extensions?
+            .Replace(".", "")
+            .Split(',', ' ', ';')
+            .Select(e => $".{e}")
+            .ToArray(); 
 
         public bool Verbose { get; set; }
 

@@ -1,5 +1,6 @@
 ﻿using Fclp;
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace Netspark.Utilities.FullRename
@@ -26,10 +27,19 @@ namespace Netspark.Utilities.FullRename
                 .Required()
                 .WithDescription("Replacement for the search prase");
 
+            parser.Setup(arg => arg.Extensions)
+                .As('e', "extensions")
+                .WithDescription("File extensions to replace content in");
+
             parser.Setup(arg => arg.IgnoreCase)
                 .As('i', "ignore-case")
                 .SetDefault(false)
                 .WithDescription("Ignore case in file search");
+
+            parser.Setup(arg => arg.Multiterm)
+                .As('m', "multiterm")
+                .SetDefault(false)
+                .WithDescription("Performs multiple passes and replaces each next search with corresponding next replace. ");
 
             parser.Setup(arg => arg.Verbose)
                 .As('v', "verbose")
@@ -56,8 +66,33 @@ namespace Netspark.Utilities.FullRename
             if (!helpRequested)
             {
                 var replacer = new Replacer();
-                await replacer.Replace(options);
+                if (!options.Multiterm)
+                {
+                    await replacer.Replace(options);
+                }
+                else
+                {
+                    var (searches, replaces) = GetMultiterms(options);
+                    for(var i = 0; i < searches.Length; i++)
+                    {
+                        options.Search = searches[i];
+                        options.Replace = replaces[i];
+                        await replacer.Replace(options);
+                    }
+                }
             }
+        }
+
+        private static (string[] Searches, string[] Replaces) GetMultiterms(ReplaceOptions options)
+        {
+            var searches = options.Search.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            var replaces = options.Replace.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            if (searches.Length != replaces.Length)
+                throw new Exception("When multiterm option present, search and replace arrays should have the same number of space-separated terms");
+
+            var len = Math.Min(searches.Length, replaces.Length);
+            return (searches.Take(len).ToArray(), replaces.Take(len).ToArray());
         }
     }
 }
