@@ -5,6 +5,8 @@ namespace Netspark.CleanArchitecture.Scaffold
     public class YamlConfig
     {
         public string Namespace { get; set; } = "FaceFK";
+        public string UiSuffix { get; set; } = "WebUI";
+        public string UiPath { get; set; } = "WebUI";
         public string DbContext { get; set; } = "IFaceDbContext";
         public string SrcPath { get; set; } = "./Src";
         public string TestsPath { get; set; } = "./Tests";

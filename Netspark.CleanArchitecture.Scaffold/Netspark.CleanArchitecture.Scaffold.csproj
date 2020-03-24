@@ -8,7 +8,7 @@
 		<PackageId>Netspark.CleanArchitecture.Scaffold</PackageId>
 		<PackageOutputPath>.nuget</PackageOutputPath>
 		<Authors>Gennadii Kostrov</Authors>
-		<Version>1.1.6</Version>
+		<Version>1.2.1</Version>
 		<Company>Netspark Clean Architecture</Company>
 		<Description>DotNetTool for scaffolding clean architecture commands and queries along with their test stubs according to the structure of the application presented in NorhwindTraders database on GitHub https://github.com/JasonGT/NorthwindTraders.git by architect Jason Taylor.</Description>
 		<Copyright>MIT License</Copyright>
@@ -16,8 +16,8 @@
 		<PackageProjectUrl></PackageProjectUrl>
 		<RepositoryUrl>https://github.com/netspark/dotnet-cli-tools.git</RepositoryUrl>
 		<RepositoryType>Git</RepositoryType>
-		<AssemblyVersion>1.1.6.1</AssemblyVersion>
-		<FileVersion>1.1.6.1</FileVersion>
+		<AssemblyVersion>1.2.1.1</AssemblyVersion>
+		<FileVersion>1.2.1.1</FileVersion>
 		<PackageTags>cleanasc, Clean Architecure, Code Generators, Scaffolders, Performance Tools, DotNetTools</PackageTags>
 		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -29,6 +29,7 @@
 - Fixed integration test generator issues
 - Fixed namespace for integration test fixture
 - Fixed pathname for controllers in *nix systems
+- Added config params for UiSuffix and UiPath
 </PackageReleaseNotes>
 	</PropertyGroup>
 

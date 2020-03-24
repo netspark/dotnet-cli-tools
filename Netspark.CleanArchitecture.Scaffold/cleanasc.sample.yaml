@@ -1,0 +1,29 @@
+# Settings
+---
+Namespace: MyCompany
+UiSuffix: WebUI
+UiPath: WebUI
+DbContext: IMyDbContext
+SrcPath: ./Src
+TestsPath: ./Tests
+ApiUrlPrefix: api/v1
+
+# Domains
+---
+Domain1:
+  Commands:
+    - Command1
+    - Command2
+  Queries:
+    - Query1
+    - GetListQuery
+Domain2:
+  Commands:
+    - CreateEntity
+    - DeleteEntity
+    - CreateEntity2
+    - Delete2
+  Queries:
+    - GetEntityList
+    - GetEntity2List
+    - GetEntityDetail

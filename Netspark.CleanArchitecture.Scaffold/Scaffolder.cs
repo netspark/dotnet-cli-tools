@@ -219,7 +219,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var queriesNsPlaceholder = GetUsingsPlaceholder(queries);
             var commandsNsPlaceholder = GetUsingsPlaceholder(commands);
 
-            var webNsPlaceholder = $"{_config.Namespace}.WebUI";
+            var webNsPlaceholder = $"{_config.Namespace}.{_config.UiSuffix}";
             var namespacePlaceholder = $"{webNsPlaceholder}.Controllers.{domainNode.Name}";
 
             var controllerPlaceholder = $"{domainNode.Name}Controller";
@@ -647,7 +647,7 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             var urlPlaceholder = GetQueryApiUrl(queryNode);
             var appNsPlaceholder = $"{_config.Namespace}.Application";
-            var webNsPlaceholder = $"{_config.Namespace}.WebUI";
+            var webNsPlaceholder = $"{_config.Namespace}.{_config.UiSuffix}";
             var queryNsPlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var queriesNsPlaceholder = $"{appNsPlaceholder}.{queryNode.Parent.GetFullPath(".")}";
             var namespacePlaceholder = $"{webNsPlaceholder}.IntegrationTests.Controllers.{queryNode.GetDomainName()}";
@@ -846,7 +846,7 @@ namespace Netspark.CleanArchitecture.Scaffold
                     path = _config.SrcPath;
                     break;
                 case SavePathType.Controller:
-                    subFolder = Path.Combine("WebUI", "Controllers");
+                    subFolder = Path.Combine(_config.UiPath, "Controllers");
                     path = _config.SrcPath;
                     break;
                 case SavePathType.UnitTest:
@@ -854,7 +854,7 @@ namespace Netspark.CleanArchitecture.Scaffold
                     path = _config.TestsPath;
                     break;
                 case SavePathType.IntegrationTest:
-                    subFolder = "WebUI.IntegrationTests";
+                    subFolder = $"{_config.UiSuffix}.IntegrationTests";
                     path = _config.TestsPath;
                     break;
                 default:
