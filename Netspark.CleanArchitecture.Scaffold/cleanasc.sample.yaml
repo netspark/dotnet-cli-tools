@@ -2,11 +2,15 @@
 ---
 Namespace: MyCompany
 UiSuffix: WebUI
-UiPath: WebUI
+ApiUrlPrefix: api/v1
 DbContext: IMyDbContext
+
+UiPath: WebUI
+AppPath: Application
+
 SrcPath: ./Src
 TestsPath: ./Tests
-ApiUrlPrefix: api/v1
+
 
 # Domains
 ---

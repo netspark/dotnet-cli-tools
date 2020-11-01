@@ -201,8 +201,8 @@ namespace Netspark.CleanArchitecture.Scaffold
             var usings = new HashSet<string>();
             foreach (var operation in operations)
             {
-                usings.Add($"using {_config.Namespace}.Application.{operation.GetFullPath(".")};");
-                usings.Add($"using {_config.Namespace}.Application.{operation.Parent.GetFullPath(".")};");
+                usings.Add($"using {_config.Namespace}.{_config.AppSuffix}.{operation.GetFullPath(".")};");
+                usings.Add($"using {_config.Namespace}.{_config.AppSuffix}.{operation.Parent.GetFullPath(".")};");
             }
 
             return string.Join(Environment.NewLine, usings.OrderBy(u => u));
@@ -404,7 +404,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppListDto];
             template.ResetParameters();
 
-            var appNsPlaceholder = $"{_config.Namespace}.Application";
+            var appNsPlaceholder = $"{_config.Namespace}.{_config.AppSuffix}";
             var domainNsPlaceholder = $"{_config.Namespace}.Domain";
             var namespacePlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var dtoPlaceholder = GetDtoPlaceholder(queryNode);
@@ -430,7 +430,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppQueryValidator];
             template.ResetParameters();
 
-            var namespacePlaceholder = $"{_config.Namespace}.Application.{queryNode.GetFullPath(".")}";
+            var namespacePlaceholder = $"{_config.Namespace}.{_config.AppSuffix}.{queryNode.GetFullPath(".")}";
             var queryPlaceholder = $"{queryNode.Name}Query";
             var validatorPlaceholder = $"{queryNode.Name}QueryValidator";
 
@@ -455,7 +455,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppQuery];
             template.ResetParameters();
 
-            var namespacePlaceholder = $"{_config.Namespace}.Application.{queryNode.GetFullPath(".")}";
+            var namespacePlaceholder = $"{_config.Namespace}.{_config.AppSuffix}.{queryNode.GetFullPath(".")}";
             var queryPlaceholder = $"{queryNode.Name}Query";
             var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
 
@@ -480,7 +480,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppListVm];
             template.ResetParameters();
 
-            var namespacePlaceholder = $"{_config.Namespace}.Application.{queryNode.GetFullPath(".")}";
+            var namespacePlaceholder = $"{_config.Namespace}.{_config.AppSuffix}.{queryNode.GetFullPath(".")}";
             var dtoPlaceholder = GetDtoPlaceholder(queryNode);
             var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
 
@@ -504,7 +504,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppListHandler];
             template.ResetParameters();
 
-            var appNsPlaceholder = $"{_config.Namespace}.Application";
+            var appNsPlaceholder = $"{_config.Namespace}.{_config.AppSuffix}";
             var namespacePlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var queryPlaceholder = $"{queryNode.Name}Query";
             var handlerPlaceholder = $"{queryPlaceholder}Handler";
@@ -535,7 +535,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppDetailHandler];
             template.ResetParameters();
 
-            var appNsPlaceholder = $"{_config.Namespace}.Application";
+            var appNsPlaceholder = $"{_config.Namespace}.{_config.AppSuffix}";
             var namespacePlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var queryPlaceholder = $"{queryNode.Name}Query";
             var handlerPlaceholder = $"{queryPlaceholder}Handler";
@@ -565,9 +565,9 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppDetailVm];
             template.ResetParameters();
 
-            var appNsPlaceholder = $"{_config.Namespace}.Application";
+            var appNsPlaceholder = $"{_config.Namespace}.{_config.AppSuffix}";
             var domainNsPlaceholder = $"{_config.Namespace}.Domain";
-            var namespacePlaceholder = $"{_config.Namespace}.Application.{queryNode.GetFullPath(".")}";
+            var namespacePlaceholder = $"{_config.Namespace}.{_config.AppSuffix}.{queryNode.GetFullPath(".")}";
             var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
 
             template.SetParameter(TemplateParameterType.ApplicationNsPlaceholder, appNsPlaceholder);
@@ -612,7 +612,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.UnitTestQuery];
             template.ResetParameters();
 
-            var appNsPlaceholder = $"{_config.Namespace}.Application";
+            var appNsPlaceholder = $"{_config.Namespace}.{_config.AppSuffix}";
             var persistNsPlaceholder = $"{_config.Namespace}.Persistence";
             var queryNsPlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var namespacePlaceholder = $"{appNsPlaceholder}.UnitTests.{queryNode.Parent.GetFullPath(".")}";
@@ -646,7 +646,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             template.ResetParameters();
 
             var urlPlaceholder = GetQueryApiUrl(queryNode);
-            var appNsPlaceholder = $"{_config.Namespace}.Application";
+            var appNsPlaceholder = $"{_config.Namespace}.{_config.AppSuffix}";
             var webNsPlaceholder = $"{_config.Namespace}.{_config.UiSuffix}";
             var queryNsPlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var queriesNsPlaceholder = $"{appNsPlaceholder}.{queryNode.Parent.GetFullPath(".")}";
@@ -692,7 +692,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.UnitTestCommand];
             template.ResetParameters();
 
-            var appNsPlaceholder = $"{_config.Namespace}.Application";
+            var appNsPlaceholder = $"{_config.Namespace}.{_config.AppSuffix}";
             var namespacePlaceholder = $"{appNsPlaceholder}.UnitTests.{cmdNode.Parent.GetFullPath(".")}";
             var commandNsPlaceholder = $"{appNsPlaceholder}.{cmdNode.GetFullPath(".")}";
 
@@ -720,7 +720,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppCommand];
             template.ResetParameters();
 
-            var namespacePlaceholder = $"{_config.Namespace}.Application.{cmdNode.GetFullPath(".")}";
+            var namespacePlaceholder = $"{_config.Namespace}.{_config.AppSuffix}.{cmdNode.GetFullPath(".")}";
             template.SetParameter(TemplateParameterType.CommandPlaceholder, $"{cmdNode.Name}Command");
             template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
             return template;
@@ -739,7 +739,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppValidator];
             template.ResetParameters();
 
-            var namespacePlaceholder = $"{_config.Namespace}.Application.{cmdNode.GetFullPath(".")}";
+            var namespacePlaceholder = $"{_config.Namespace}.{_config.AppSuffix}.{cmdNode.GetFullPath(".")}";
             template.SetParameter(TemplateParameterType.CommandPlaceholder, $"{cmdNode.Name}Command");
             template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
             template.SetParameter(TemplateParameterType.ValidatorPlaceholder, $"{cmdNode.Name}CommandValidator");
@@ -762,7 +762,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppHandler];
             template.ResetParameters();
 
-            var appNsPlaceholder = $"{_config.Namespace}.Application";
+            var appNsPlaceholder = $"{_config.Namespace}.{_config.AppSuffix}";
             var domainNsPlaceholder = $"{_config.Namespace}.Domain";
             var namespacePlaceholder = $"{appNsPlaceholder}.{cmdNode.GetFullPath(".")}";
 
@@ -813,7 +813,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var template = templates[ResourceTemplateType.AppEvent];
             template.ResetParameters();
 
-            var appNsPlaceholder = $"{_config.Namespace}.Application";
+            var appNsPlaceholder = $"{_config.Namespace}.{_config.AppSuffix}";
             var namespacePlaceholder = $"{appNsPlaceholder}.{cmdNode.GetFullPath(".")}";
             var handlerPlaceholder = $"{eventPlaceholder}EventHandler";
 
@@ -842,7 +842,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             switch (saveType)
             {
                 case SavePathType.Application:
-                    subFolder = "Application";
+                    subFolder = _config.AppPath;
                     path = _config.SrcPath;
                     break;
                 case SavePathType.Controller:
@@ -850,11 +850,11 @@ namespace Netspark.CleanArchitecture.Scaffold
                     path = _config.SrcPath;
                     break;
                 case SavePathType.UnitTest:
-                    subFolder = "Application.UnitTests";
+                    subFolder = $"{_config.Namespace}.{_config.AppSuffix}.UnitTests";
                     path = _config.TestsPath;
                     break;
                 case SavePathType.IntegrationTest:
-                    subFolder = $"{_config.UiSuffix}.IntegrationTests";
+                    subFolder = $"{_config.Namespace}.{_config.UiSuffix}.IntegrationTests";
                     path = _config.TestsPath;
                     break;
                 default:
