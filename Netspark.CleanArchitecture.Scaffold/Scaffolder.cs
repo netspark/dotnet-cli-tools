@@ -120,9 +120,24 @@ namespace Netspark.CleanArchitecture.Scaffold
         {
             var result = new Dictionary<string, string>();
 
-            var template = GetControllerTemplate(templates, domainNode);
-            var path = $"{domainNode.Name}/{domainNode.Name}Controller.cs";
-            result[path] = template.GetReplacedContent();
+            var subDomains = domainNode.FindSubDomains();
+            if (subDomains.Any())
+            {
+                // multidomain mode
+                foreach(var subDomain in subDomains)
+                {
+                    var template = GetControllerTemplate(templates, subDomain, domainNode);
+                    var path = $"{domainNode.Name}/{subDomain.Name}Controller.cs";
+                    result[path] = template.GetReplacedContent();
+                }
+            }
+            else
+            {
+                // single domain mode
+                var template = GetControllerTemplate(templates, domainNode);
+                var path = $"{domainNode.Name}/{domainNode.Name}Controller.cs";
+                result[path] = template.GetReplacedContent();
+            }
 
             return result;
         }
@@ -208,13 +223,15 @@ namespace Netspark.CleanArchitecture.Scaffold
             return string.Join(Environment.NewLine, usings.OrderBy(u => u));
         }
 
-        private ResourceTemplate GetControllerTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode domainNode)
+        private ResourceTemplate GetControllerTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode domainNode, AppNode subdomainNode = null)
         {
             var template = templates[ResourceTemplateType.WebController];
             template.ResetParameters();
 
-            var queries = domainNode.FindQueries();
-            var commands = domainNode.FindCommands();
+            var workNode = subdomainNode ?? domainNode;
+
+            var queries = workNode.FindQueries();
+            var commands = workNode.FindCommands();
 
             var queriesNsPlaceholder = GetUsingsPlaceholder(queries);
             var commandsNsPlaceholder = GetUsingsPlaceholder(commands);
@@ -222,8 +239,8 @@ namespace Netspark.CleanArchitecture.Scaffold
             var webNsPlaceholder = $"{_config.Namespace}.{_config.UiSuffix}";
             var namespacePlaceholder = $"{webNsPlaceholder}.Controllers.{domainNode.Name}";
 
-            var controllerPlaceholder = $"{domainNode.Name}Controller";
-            var actionsPlaceholder = GetActionsPlaceholder(templates, domainNode);
+            var controllerPlaceholder = $"{workNode.Name}Controller";
+            var actionsPlaceholder = GetActionsPlaceholder(templates, workNode);
 
             template.SetParameter(TemplateParameterType.CommandsNsPlaceholder, commandsNsPlaceholder);
             template.SetParameter(TemplateParameterType.QueriesNsPlaceholder, queriesNsPlaceholder);

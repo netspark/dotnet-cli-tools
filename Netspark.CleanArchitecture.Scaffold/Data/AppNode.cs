@@ -15,7 +15,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             "May", "Might",
 
         };
-        public static string[] InsertCommandPrefixes = { "Insert", "Upsert" };
+        public static string[] InsertCommandPrefixes = { "Add", "Insert", "Upsert" };
         public static string[] UpdateCommandPrefixes = { "Update", "Upsert", "Save" };
         public static string[] DeleteCommandPrefixes = { "Delete", "Remove", "Drop", "Destroy", "Terminate" };
 
@@ -95,6 +95,19 @@ namespace Netspark.CleanArchitecture.Scaffold
             }
 
             return node.Name;
+        }
+
+        public IList<AppNode> FindSubDomains()
+        {
+            var result = new List<AppNode>();
+            foreach (var child in Children)
+            {
+                if (!Name.Contains("Queries") && !Name.Contains("Commands"))
+                {
+                    result.Add(child);
+                }
+            }
+            return result;
         }
 
         public bool IsQuery => (this?.Parent.Name.Contains("Queries") ?? false) && Children.Count == 0;
