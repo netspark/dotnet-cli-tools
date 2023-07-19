@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 
 namespace Netspark.CleanArchitecture.Scaffold
@@ -15,7 +16,7 @@ namespace Netspark.CleanArchitecture.Scaffold
         private readonly YamlConfig _config;
         private readonly IVerbService _verbService;
 
-        public Scaffolder([NotNull]ScaffolderOptions options, [NotNull]YamlConfig config, [NotNull]IVerbService verbService)
+        public Scaffolder([NotNull] ScaffolderOptions options, [NotNull] YamlConfig config, [NotNull] IVerbService verbService)
         {
             _config = MergeOptions(options, config);
             _verbService = verbService;
@@ -23,7 +24,8 @@ namespace Netspark.CleanArchitecture.Scaffold
 
         public void Run()
         {
-            var templates = LoadTemplates();
+            var templates = LoadTemplates(_config.TemplatesVersion);
+            var isRooted = _config.Domains.All(m => m.Name.StartsWithAny("Commands", "Queries"));
             foreach (var domainNode in _config.Domains)
             {
                 var commands = domainNode.FindCommands();
@@ -33,20 +35,45 @@ namespace Netspark.CleanArchitecture.Scaffold
                 var queryFiles = GenerateQueries(queries, templates);
                 var commandTestFiles = GenerateCommandTests(commands, templates);
                 var queryTestFiles = GenerateQueryTests(queries, templates);
-                var controllerFiles = GenerateControllers(domainNode, templates);
+                var exampleFiles = GenerateExamples(domainNode, templates);
+                var controllerFiles = isRooted
+                    ? new Dictionary<string, ControllerFile>()
+                    : GenerateControllers(domainNode, templates);
 
                 SaveFiles(commandFiles, _config);
                 SaveFiles(queryFiles, _config);
                 SaveFiles(commandTestFiles, _config);
                 SaveFiles(queryTestFiles, _config);
                 SaveFiles(controllerFiles, _config);
-
+                SaveFiles(exampleFiles, _config);
             }
+
+            // generate rooted controllers
+            if (!isRooted)
+                return;
+
+            var cmdRoot = _config.Domains.FirstOrDefault(m => m.Name.StartsWith("Commands"));
+            var queryRoot = _config.Domains.FirstOrDefault(m => m.Name.StartsWith("Queries"));
+
+            var rootedControllerFiles = GenerateControllers(cmdRoot, queryRoot, templates);
+
+            SaveFiles(rootedControllerFiles, _config);
         }
 
         private YamlConfig MergeOptions(ScaffolderOptions options, YamlConfig config)
         {
+            // copy pass-through options
             config.MergeStrategy = options.MergeStrategy;
+            config.GenerateCommands = options.GenerateCommands;
+            config.GenerateQueries = options.GenerateQueries;
+            config.GenerateControllerActions = options.GenerateControllerActions;
+            config.GenerateUnitTests = options.GenerateUnitTests;
+            config.GenerateIntegrationTests = options.GenerateIntegrationTests;
+            config.GenerateValidators = options.GenerateValidators;
+            config.GenerateHandlers = options.GenerateHandlers;
+            config.GenerateEvents = options.GenerateEvents;
+            config.GenerateExamples = options.GenerateExamples;
+            config.TemplatesVersion = options.TemplatesVersion;
 
             // set config folder
             var configFile = GetRootedPath(options.ConfigFile);
@@ -61,10 +88,10 @@ namespace Netspark.CleanArchitecture.Scaffold
         }
 
 
-        private IDictionary<ResourceTemplateType, ResourceTemplate> LoadTemplates() => GetType()
+        private IDictionary<ResourceTemplateType, ResourceTemplate> LoadTemplates(string version) => GetType()
                 .Assembly
                 .GetManifestResourceNames()
-                .Where(r => r.Contains(".Templates."))
+                .Where(r => r.Contains($".Templates.{version}."))
                 .Select(r => new ResourceTemplate(r, LoadEmbeddedTemplateResource(r)))
                 .ToDictionary(t => t.Type);
 
@@ -114,29 +141,121 @@ namespace Netspark.CleanArchitecture.Scaffold
             }
         }
 
+        private void SaveFiles(IDictionary<string, ControllerFile> filesOut, YamlConfig config)
+        {
+            if (config.MergeStrategy != MergeStrategy.Append)
+            {
+                SaveFiles(filesOut.ToDictionary(f => f.Key, f => f.Value.Content), config);
+                return;
+            }
+
+            var copy = new HashSet<string>();
+            var skip = new HashSet<string>();
+            foreach (var fileOut in filesOut)
+            {
+                var srcFile = GetSaveFilePath(config.ConfigFolder, fileOut.Key);
+                var srcFolder = Path.GetDirectoryName(srcFile);
+
+                var outFile = GetSaveFilePath(config.OutputFolder, fileOut.Key);
+                var outFolder = Path.GetDirectoryName(outFile);
+
+                var same = srcFolder == outFolder;
+
+                if (!File.Exists(srcFile))
+                {
+                    EnsureDirectory(outFolder);
+                    File.WriteAllText(outFile, fileOut.Value.Content);
+                }
+                else
+                {
+                    var originalContent = File.ReadAllText(srcFile);
+                    var outContent = fileOut.Value.AppendMissingActions(originalContent);
+                    File.WriteAllText(outFile, outContent);
+                }
+            }
+        }
+
         #region Generation
 
-        private IDictionary<string, string> GenerateControllers(AppNode domainNode, IDictionary<ResourceTemplateType, ResourceTemplate> templates)
+        private IDictionary<string, ControllerFile> GenerateControllers(AppNode domainNode, IDictionary<ResourceTemplateType, ResourceTemplate> templates)
         {
-            var result = new Dictionary<string, string>();
+            var result = new Dictionary<string, ControllerFile>();
+
+            if (!_config.GenerateControllerActions)
+                return result;
 
             var subDomains = domainNode.FindSubDomains();
+            var baseFolder = domainNode.Name.StartsWithAny("Commands", "Queries")
+                ? ""
+                : $"{domainNode.Name}/";
+
             if (subDomains.Any())
             {
                 // multidomain mode
-                foreach(var subDomain in subDomains)
+                foreach (var subDomain in subDomains)
                 {
-                    var template = GetControllerTemplate(templates, subDomain, domainNode);
-                    var path = $"{domainNode.Name}/{subDomain.Name}Controller.cs";
-                    result[path] = template.GetReplacedContent();
+                    var (template, actions, usings) = GetControllerTemplate(templates, subDomain, domainNode);
+                    var path = $"{baseFolder}{subDomain.Name}Controller.cs";
+                    result[path] = new ControllerFile(path, template.GetReplacedContent(), usings, actions);
                 }
             }
             else
             {
                 // single domain mode
-                var template = GetControllerTemplate(templates, domainNode);
-                var path = $"{domainNode.Name}/{domainNode.Name}Controller.cs";
-                result[path] = template.GetReplacedContent();
+                var (template, actions, usings) = GetControllerTemplate(templates, domainNode);
+                var path = $"{baseFolder}{domainNode.Name}Controller.cs";
+                result[path] = new ControllerFile(path, template.GetReplacedContent(), usings, actions);
+            }
+
+            return result;
+        }
+
+        private IDictionary<string, ControllerFile> GenerateControllers(AppNode cmdRoot, AppNode queryRoot, IDictionary<ResourceTemplateType, ResourceTemplate> templates)
+        {
+            var result = new Dictionary<string, ControllerFile>();
+
+            if (!_config.GenerateControllerActions)
+                return result;
+
+            var subDomains = cmdRoot
+                .FindSubDomains()
+                .Concat(queryRoot.FindSubDomains())
+                .GroupBy(m => m.Name);
+
+            if (subDomains.Any())
+            {
+                // multidomain mode
+                foreach (var subDomain in subDomains)
+                {
+                    var (template, actions, usings) = GetControllerTemplate(templates, subDomain.Key, subDomain);
+                    var path = $"{subDomain.Key}Controller.cs";
+                    result[path] = new ControllerFile(path, template.GetReplacedContent(), usings, actions);
+                }
+            }
+
+            return result;
+        }
+
+        private IDictionary<string, string> GenerateExamples(AppNode domainNode, IDictionary<ResourceTemplateType, ResourceTemplate> templates)
+        {
+            var result = new Dictionary<string, string>();
+
+            if (!_config.GenerateExamples)
+                return result;
+
+            var subDomains = domainNode.FindSubDomains();
+            if (subDomains.Any())
+            {
+                // multidomain mode
+                foreach (var subDomain in subDomains)
+                {
+                    AddExampleTemplate(templates, result, subDomain);
+                }
+            }
+            else
+            {
+                // single domain mode
+                AddExampleTemplate(templates, result, domainNode);
             }
 
             return result;
@@ -150,48 +269,66 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             foreach (var queryNode in queries)
             {
-                AddQueryUnitTestTemplate(templates, result, queryNode);
-                AddQueryIntegrationTestTemplate(templates, result, queryNode);
+                if (_config.GenerateUnitTests)
+                    AddQueryUnitTestTemplate(templates, result, queryNode);
+
+                if (_config.GenerateIntegrationTests)
+                    AddQueryIntegrationTestTemplate(templates, result, queryNode);
             }
+
             return result;
         }
 
         private IDictionary<string, string> GenerateCommandTests(IList<AppNode> commands, IDictionary<ResourceTemplateType, ResourceTemplate> templates)
         {
             var result = new Dictionary<string, string>();
-            if (commands == null)
+            if (commands == null || !_config.GenerateUnitTests)
                 return result;
 
             foreach (var cmdNode in commands)
             {
                 AddCommandUnitTestTemplate(templates, result, cmdNode);
             }
+
             return result;
         }
 
         private IDictionary<string, string> GenerateQueries(IList<AppNode> queries, IDictionary<ResourceTemplateType, ResourceTemplate> templates)
         {
             var result = new Dictionary<string, string>();
+            var needQueries = _config.GenerateQueries;
+            var needHandlers = _config.GenerateHandlers;
+            var needValidators = _config.GenerateValidators;
+
             if (queries == null)
                 return result;
 
             foreach (var queryNode in queries)
             {
-                if (queryNode.Name.EndsWith("List"))
+                if (queryNode.Name.EndsWithAny("List", "Grid"))
                 {
                     AddDtoTemplate(templates, result, queryNode);
-                    AddListHandlerTemplate(templates, result, queryNode);
+
+                    if (needHandlers)
+                        AddListHandlerTemplate(templates, result, queryNode);
+
                     AddListVmTemplate(templates, result, queryNode);
                 }
                 else
                 {
-                    AddDetailHandlerTemplate(templates, result, queryNode);
+                    if (needHandlers)
+                        AddDetailHandlerTemplate(templates, result, queryNode);
+
                     AddDetailVmTemplate(templates, result, queryNode);
                 }
 
-                AddQueryTemplate(templates, result, queryNode);
-                AddQueryValidatorTemplate(templates, result, queryNode);
+                if (needQueries)
+                    AddQueryTemplate(templates, result, queryNode);
+
+                if (needValidators)
+                    AddQueryValidatorTemplate(templates, result, queryNode);
             }
+
             return result;
         }
 
@@ -203,11 +340,19 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             foreach (var cmdNode in commands)
             {
-                AddCommandTemplate(templates, result, cmdNode);
-                AddCommandHandlerTemplate(templates, result, cmdNode);
-                AddCommandValidatorTemplate(templates, result, cmdNode);
-                AddEventTemplate(templates, result, cmdNode);
+                if (_config.GenerateCommands)
+                    AddCommandTemplate(templates, result, cmdNode);
+
+                if (_config.GenerateHandlers)
+                    AddCommandHandlerTemplate(templates, result, cmdNode);
+
+                if (_config.GenerateValidators)
+                    AddCommandValidatorTemplate(templates, result, cmdNode);
+
+                if (_config.GenerateEvents)
+                    AddEventTemplate(templates, result, cmdNode);
             }
+
             return result;
         }
 
@@ -223,7 +368,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             return string.Join(Environment.NewLine, usings.OrderBy(u => u));
         }
 
-        private ResourceTemplate GetControllerTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode domainNode, AppNode subdomainNode = null)
+        private (ResourceTemplate Template, IDictionary<string, string> Actions, string[] Usings) GetControllerTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode domainNode, AppNode subdomainNode = null)
         {
             var template = templates[ResourceTemplateType.WebController];
             template.ResetParameters();
@@ -237,30 +382,96 @@ namespace Netspark.CleanArchitecture.Scaffold
             var commandsNsPlaceholder = GetUsingsPlaceholder(commands);
 
             var webNsPlaceholder = $"{_config.Namespace}.{_config.UiSuffix}";
+            var examplesNsPlaceholder = $"using {_config.UiSuffix}.Controllers.Examples;";
+
+            var usings = string.Join(Environment.NewLine,
+                    new[]
+                    {
+                        queriesNsPlaceholder,
+                        commandsNsPlaceholder,
+                        examplesNsPlaceholder
+                    })
+                .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
             var namespacePlaceholder = $"{webNsPlaceholder}.Controllers.{domainNode.Name}";
 
             var controllerPlaceholder = $"{workNode.Name}Controller";
-            var actionsPlaceholder = GetActionsPlaceholder(templates, workNode);
+            var actions = GetControllerActions(templates, workNode);
+            var actionsPlaceholder = string.Join("", actions.Values);
 
             template.SetParameter(TemplateParameterType.CommandsNsPlaceholder, commandsNsPlaceholder);
             template.SetParameter(TemplateParameterType.QueriesNsPlaceholder, queriesNsPlaceholder);
             template.SetParameter(TemplateParameterType.WebNsPlaceholder, webNsPlaceholder);
+            template.SetParameter(TemplateParameterType.ExampleNsPlaceholder, examplesNsPlaceholder);
 
             template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
             template.SetParameter(TemplateParameterType.ControllerPlaceholder, controllerPlaceholder);
             template.SetParameter(TemplateParameterType.ActionsPlaceholder, actionsPlaceholder);
 
-            return template;
+            return (template, actions, usings);
         }
 
-        private string GetActionsPlaceholder(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode domainNode)
+        private (ResourceTemplate Template, IDictionary<string, string> Actions, string[] Usings) GetControllerTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, string domainName, IEnumerable<AppNode> subDomains)
+        {
+            var template = templates[ResourceTemplateType.WebController];
+            template.ResetParameters();
+
+            var queries = subDomains.SelectMany(m => m.FindQueries());
+            var commands = subDomains.SelectMany(m => m.FindCommands());
+
+            var queriesNsPlaceholder = GetUsingsPlaceholder(queries);
+            var commandsNsPlaceholder = GetUsingsPlaceholder(commands);
+
+            var webNsPlaceholder = $"{_config.UiSuffix}";
+            var examplesNsPlaceholder = _config.GenerateExamples
+                ? $"using {_config.UiSuffix}.Controllers.Examples;"
+                : "";
+
+            var usings = string.Join(Environment.NewLine, 
+                    new[] 
+                    { 
+                        queriesNsPlaceholder, 
+                        commandsNsPlaceholder, 
+                        examplesNsPlaceholder 
+                    })
+                .Split(Environment.NewLine, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+            var namespacePlaceholder = $"{webNsPlaceholder}.Controllers.{domainName}";
+
+            var controllerPlaceholder = $"{domainName}Controller";
+
+            var commandsAndQueries = commands.Concat(queries);
+            var actions = GetControllerActions(templates, domainName, commandsAndQueries);
+            var actionsPlaceholder = string.Join("", actions.Values);
+
+            template.SetParameter(TemplateParameterType.CommandsNsPlaceholder, commandsNsPlaceholder);
+            template.SetParameter(TemplateParameterType.QueriesNsPlaceholder, queriesNsPlaceholder);
+            template.SetParameter(TemplateParameterType.WebNsPlaceholder, webNsPlaceholder);
+            template.SetParameter(TemplateParameterType.ExampleNsPlaceholder, examplesNsPlaceholder);
+
+            template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
+            template.SetParameter(TemplateParameterType.ControllerPlaceholder, controllerPlaceholder);
+            template.SetParameter(TemplateParameterType.ActionsPlaceholder, actionsPlaceholder);
+
+            return (template, actions, usings);
+        }
+
+        private IDictionary<string, string> GetControllerActions(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode domainNode)
+        {
+            var actions = domainNode.FindCommands()
+                .Union(domainNode.FindQueries());
+
+            return GetControllerActions(templates, domainNode.Name, actions);
+        }
+
+
+        private IDictionary<string, string> GetControllerActions(IDictionary<ResourceTemplateType, ResourceTemplate> templates, string domainName, IEnumerable<AppNode> commandsAndQueries)
         {
             var pluralizer = new Pluralizer();
-            var singular = pluralizer.Singularize(domainNode.Name);
-            var plural = pluralizer.Pluralize(domainNode.Name);
+            var singular = pluralizer.Singularize(domainName);
+            var plural = pluralizer.Pluralize(domainName);
 
-            var actions = domainNode.FindCommands()
-                .Union(domainNode.FindQueries())
+            var actions = commandsAndQueries
                 .Select(c =>
                 {
                     var group = GetActionGroup(c, pluralizer);
@@ -279,17 +490,17 @@ namespace Netspark.CleanArchitecture.Scaffold
                 // treat entity with domain name as primary
                 .OrderBy(g => g.Key.Replace(plural, ""));
 
-            var sb = new StringBuilder();
+            var result = new Dictionary<string, string>();
             foreach (var actionGroup in actions)
             {
                 foreach (var action in actionGroup.OrderBy(a => a.Node.IsCommand).ThenBy(a => a.Node.Name))
                 {
                     var template = GetActionTemplate(templates, action);
-                    sb.Append(template.GetReplacedContent());
+                    result[action.Node.Name] = template.GetReplacedContent();
                 }
             }
 
-            return sb.ToString();
+            return result;
         }
 
         private ResourceTemplate GetActionTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, ControllerActionGroup action)
@@ -332,13 +543,18 @@ namespace Netspark.CleanArchitecture.Scaffold
             template.ResetParameters();
 
             var routePlaceholder = GetQueryRoutePlaceholder(action.Node, action.DomainPlural, action.DomainSingular);
-            var vmPlaceholder = $"{GetQueryBaseName(action.Node, trimGet: true)}Vm";
+            string vmPlaceholder = GetVmPlaceholder(action.Node);
 
             template.SetParameter(TemplateParameterType.RoutePlaceholder, routePlaceholder);
             template.SetParameter(TemplateParameterType.QueryPlaceholder, action.Node.Name);
             template.SetParameter(TemplateParameterType.VmPlaceholder, vmPlaceholder);
 
             return template;
+        }
+
+        private string GetVmPlaceholder(AppNode node)
+        {
+            return $"{GetQueryBaseName(node, trimGet: true)}{_config.VmSuffix}";
         }
 
         private static string GetCommandRoutePlaceholder(AppNode node, string domainPlural, string domainSingular)
@@ -474,7 +690,7 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             var namespacePlaceholder = $"{_config.Namespace}.{_config.AppSuffix}.{queryNode.GetFullPath(".")}";
             var queryPlaceholder = $"{queryNode.Name}Query";
-            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
+            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}{_config.VmSuffix}";
 
             template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
             template.SetParameter(TemplateParameterType.QueryPlaceholder, queryPlaceholder);
@@ -486,7 +702,7 @@ namespace Netspark.CleanArchitecture.Scaffold
         private string AddListVmTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode queryNode)
         {
             var vm = GetQueryBaseName(queryNode, trimGet: true);
-            var path = $"{queryNode.GetFullPath()}/{vm}Vm.cs";
+            var path = $"{queryNode.GetFullPath()}/{vm}{_config.VmSuffix}.cs";
             var template = GetListVmTemplate(templates, queryNode);
             result[path] = template.GetReplacedContent();
             return path;
@@ -499,7 +715,7 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             var namespacePlaceholder = $"{_config.Namespace}.{_config.AppSuffix}.{queryNode.GetFullPath(".")}";
             var dtoPlaceholder = GetDtoPlaceholder(queryNode);
-            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
+            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}{_config.VmSuffix}";
 
             template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
             template.SetParameter(TemplateParameterType.DtoPlaceholder, dtoPlaceholder);
@@ -526,7 +742,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var queryPlaceholder = $"{queryNode.Name}Query";
             var handlerPlaceholder = $"{queryPlaceholder}Handler";
             var dtoPlaceholder = GetDtoPlaceholder(queryNode);
-            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
+            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}{_config.VmSuffix}";
 
             template.SetParameter(TemplateParameterType.ApplicationNsPlaceholder, appNsPlaceholder);
             template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
@@ -556,7 +772,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var namespacePlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var queryPlaceholder = $"{queryNode.Name}Query";
             var handlerPlaceholder = $"{queryPlaceholder}Handler";
-            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
+            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}{_config.VmSuffix}";
 
             template.SetParameter(TemplateParameterType.ApplicationNsPlaceholder, appNsPlaceholder);
             template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
@@ -571,7 +787,7 @@ namespace Netspark.CleanArchitecture.Scaffold
         private string AddDetailVmTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode queryNode)
         {
             var vm = GetQueryBaseName(queryNode, trimGet: true);
-            var path = $"{queryNode.GetFullPath()}/{vm}Vm.cs";
+            var path = $"{queryNode.GetFullPath()}/{vm}{_config.VmSuffix}.cs";
             var template = GetDetailVmTemplate(templates, queryNode);
             result[path] = template.GetReplacedContent();
             return path;
@@ -585,7 +801,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var appNsPlaceholder = $"{_config.Namespace}.{_config.AppSuffix}";
             var domainNsPlaceholder = $"{_config.Namespace}.Domain";
             var namespacePlaceholder = $"{_config.Namespace}.{_config.AppSuffix}.{queryNode.GetFullPath(".")}";
-            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
+            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}{_config.VmSuffix}";
 
             template.SetParameter(TemplateParameterType.ApplicationNsPlaceholder, appNsPlaceholder);
             template.SetParameter(TemplateParameterType.DomainNsPlaceholder, domainNsPlaceholder);
@@ -595,11 +811,11 @@ namespace Netspark.CleanArchitecture.Scaffold
             return template;
         }
 
-        private static string GetDtoPlaceholder(AppNode queryNode)
+        private string GetDtoPlaceholder(AppNode queryNode)
         {
             var dtoPlaceholder = GetQueryBaseName(queryNode, trimList: true);
             dtoPlaceholder = new Pluralizer().Singularize(dtoPlaceholder);
-            dtoPlaceholder = $"{dtoPlaceholder}Dto";
+            dtoPlaceholder = $"{dtoPlaceholder}{_config.DtoSuffix}";
             return dtoPlaceholder;
         }
 
@@ -633,7 +849,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var persistNsPlaceholder = $"{_config.Namespace}.Persistence";
             var queryNsPlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var namespacePlaceholder = $"{appNsPlaceholder}.UnitTests.{queryNode.Parent.GetFullPath(".")}";
-            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
+            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}{_config.VmSuffix}";
 
             template.SetParameter(TemplateParameterType.QueryNsPlaceholder, queryNsPlaceholder);
             template.SetParameter(TemplateParameterType.ApplicationNsPlaceholder, appNsPlaceholder);
@@ -668,7 +884,7 @@ namespace Netspark.CleanArchitecture.Scaffold
             var queryNsPlaceholder = $"{appNsPlaceholder}.{queryNode.GetFullPath(".")}";
             var queriesNsPlaceholder = $"{appNsPlaceholder}.{queryNode.Parent.GetFullPath(".")}";
             var namespacePlaceholder = $"{webNsPlaceholder}.IntegrationTests.Controllers.{queryNode.GetDomainName()}";
-            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}Vm";
+            var vmPlaceholder = $"{GetQueryBaseName(queryNode, trimGet: true)}{_config.VmSuffix}";
 
             template.SetParameter(TemplateParameterType.QueryNsPlaceholder, queryNsPlaceholder);
             template.SetParameter(TemplateParameterType.QueriesNsPlaceholder, queriesNsPlaceholder);
@@ -732,12 +948,95 @@ namespace Netspark.CleanArchitecture.Scaffold
             return path;
         }
 
+
+        private void AddExampleTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode subDomain)
+        {
+            foreach (var command in subDomain.FindCommands())
+                AddCommandExampleTemplate(templates, result, command);
+
+            foreach (var query in subDomain.FindQueries())
+                AddQueryExampleTemplate(templates, result, query);
+        }
+
+        private string AddCommandExampleTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode cmdNode)
+        {
+            if (_config.TemplatesVersion == "v1")
+                return null;
+
+            var path = $"{cmdNode.Name}CommandExample.cs";
+            var template = GetExampleTemplate(templates, cmdNode);
+            result[path] = template.GetReplacedContent();
+            return path;
+        }
+
+        private void AddQueryExampleTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode queryNode)
+        {
+            if (_config.TemplatesVersion == "v1")
+                return;
+
+            var path = $"{queryNode.Name}QueryExample.cs";
+            var template = GetExampleTemplate(templates, queryNode);
+            result[path] = template.GetReplacedContent();
+
+            var vmPlaceholder = GetVmPlaceholder(queryNode);
+            var vmPath = $"{vmPlaceholder}Example.cs";
+            template = GetResponseExampleTemplate(templates, queryNode);
+            result[vmPath] = template.GetReplacedContent();
+        }
+
+
+        private ResourceTemplate GetExampleTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode node)
+        {
+            var template = templates[ResourceTemplateType.WebExampleRequest];
+            template.ResetParameters();
+
+            var namespacePlaceholder = GetExamplesNs();
+            var usingPlaceholder = $"using {_config.Namespace}.{_config.AppSuffix}.{node.GetFullPath(".")};";
+            var suffix = node.IsCommand ? "Command" : "Query";
+            var title = string.Join(' ', node.Name.SplitIntoWords());
+
+            template.SetParameter(TemplateParameterType.QueriesNsPlaceholder, node.IsQuery ? usingPlaceholder : "");
+            template.SetParameter(TemplateParameterType.CommandsNsPlaceholder, node.IsCommand ? usingPlaceholder : "");
+
+            template.SetParameter(TemplateParameterType.RequestPlaceholder, $"{node.Name}{suffix}");
+            template.SetParameter(TemplateParameterType.TitlePlaceholder, $"{title} Example");
+
+            template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
+
+            return template;
+        }
+
+        private ResourceTemplate GetResponseExampleTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode node)
+        {
+            var template = templates[ResourceTemplateType.WebExampleResponse];
+            template.ResetParameters();
+
+            var namespacePlaceholder = GetExamplesNs();
+            var usingPlaceholder = $"using {_config.Namespace}.{_config.AppSuffix}.{node.GetFullPath(".")};";
+            var vm = GetVmPlaceholder(node);
+            var title = string.Join(' ', vm.SplitIntoWords());
+
+            template.SetParameter(TemplateParameterType.QueriesNsPlaceholder, node.IsQuery ? usingPlaceholder : "");
+            template.SetParameter(TemplateParameterType.CommandsNsPlaceholder, node.IsCommand ? usingPlaceholder : "");
+
+            template.SetParameter(TemplateParameterType.ResponsePlaceholder, vm);
+            template.SetParameter(TemplateParameterType.TitlePlaceholder, $"{title} Example");
+
+            template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
+
+            return template;
+        }
+
+
+        private string GetExamplesNs() => $"{_config.UiSuffix}.Controllers.Examples";
+
         private ResourceTemplate GetCommandTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, AppNode cmdNode)
         {
             var template = templates[ResourceTemplateType.AppCommand];
             template.ResetParameters();
 
             var namespacePlaceholder = $"{_config.Namespace}.{_config.AppSuffix}.{cmdNode.GetFullPath(".")}";
+            template.SetParameter(TemplateParameterType.ResultPlaceholder, cmdNode.IsInsertCommand ? "string" : "Unit");
             template.SetParameter(TemplateParameterType.CommandPlaceholder, $"{cmdNode.Name}Command");
             template.SetParameter(TemplateParameterType.NamespacePlaceholder, namespacePlaceholder);
             return template;
@@ -763,8 +1062,6 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             return template;
         }
-
-
 
         private string AddCommandHandlerTemplate(IDictionary<ResourceTemplateType, ResourceTemplate> templates, Dictionary<string, string> result, AppNode cmdNode)
         {
@@ -874,6 +1171,10 @@ namespace Netspark.CleanArchitecture.Scaffold
                     subFolder = $"{_config.Namespace}.{_config.UiSuffix}.IntegrationTests";
                     path = _config.TestsPath;
                     break;
+                case SavePathType.Example:
+                    subFolder = Path.Combine(_config.UiPath, "Controllers", "Examples");
+                    path = _config.SrcPath;
+                    break;
                 default:
                     throw new NotSupportedException(saveType.ToString());
             }
@@ -891,14 +1192,14 @@ namespace Netspark.CleanArchitecture.Scaffold
                 : PathUtils.GetAbsolutePath(path);
         }
 
-        private static string[] _integrationSuffixes =
+        private static readonly string[] _integrationSuffixes =
         {
             "TestsIntegration.cs",
             "TestIntegration.cs",
             "IntegrationTest.cs",
             "IntegrationTests.cs"
         };
-        private static string[] _unitSuffixes =
+        private static readonly string[] _unitSuffixes =
         {
             "Tests.cs",
             "Test.cs",
@@ -914,6 +1215,9 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             if (path.EndsWith("Controller.cs"))
                 return SavePathType.Controller;
+
+            if (path.EndsWith("Example.cs"))
+                return SavePathType.Example;
 
             return SavePathType.Application;
         }
@@ -973,7 +1277,9 @@ namespace Netspark.CleanArchitecture.Scaffold
             Application,
             Controller,
             UnitTest,
-            IntegrationTest
+            IntegrationTest,
+            Example
         }
+
     }
 }

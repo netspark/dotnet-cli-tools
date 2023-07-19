@@ -24,6 +24,8 @@
         WebControllerUpdate,
         WebControllerDelete,
 
+        WebExampleRequest,
+        WebExampleResponse,
 
         UnitTestCommand,
         UnitTestQuery,

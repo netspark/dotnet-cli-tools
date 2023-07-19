@@ -30,6 +30,9 @@ namespace Netspark.CleanArchitecture.Scaffold
             {"Web.Controller.Create.cs", ResourceTemplateType.WebControllerCreate },
             {"Web.Controller.Update.cs", ResourceTemplateType.WebControllerUpdate },
             {"Web.Controller.Delete.cs", ResourceTemplateType.WebControllerDelete },
+            
+            {"Web.Example.Request.cs", ResourceTemplateType.WebExampleRequest },
+            {"Web.Example.Response.cs", ResourceTemplateType.WebExampleResponse },
 
             {"UnitTest.Command.CommandTests.cs", ResourceTemplateType.UnitTestCommand },
             {"UnitTest.Query.QueryTests.cs", ResourceTemplateType.UnitTestQuery },

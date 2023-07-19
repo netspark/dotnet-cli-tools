@@ -7,6 +7,6 @@ namespace NamespacePlaceholder
 {
     public class VmPlaceholder
     {
-        // TODO: place vm properties  and optional automappings here
+        // TODO: place vm properties and optional automappings here
     }
 }

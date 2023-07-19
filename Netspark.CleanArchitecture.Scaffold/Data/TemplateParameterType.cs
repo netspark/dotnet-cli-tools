@@ -9,12 +9,14 @@
         InfrastructureNsPlaceholder,
         ApplicationNsPlaceholder,
         WebNsPlaceholder,
+        ExampleNsPlaceholder,
         NamespacePlaceholder,
 
         CommandsNsPlaceholder,
         QueriesNsPlaceholder,
 
         CommandPlaceholder,
+        ResultPlaceholder,
         QueryPlaceholder,
         VmPlaceholder,
         DtoPlaceholder,
@@ -27,6 +29,10 @@
 
         ControllerPlaceholder,
         ActionsPlaceholder,
-        RoutePlaceholder
+        RoutePlaceholder,
+
+        TitlePlaceholder,
+        RequestPlaceholder,
+        ResponsePlaceholder
     }
 }
