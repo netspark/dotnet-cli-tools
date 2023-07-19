@@ -2,7 +2,7 @@
 
     <PropertyGroup>
       <OutputType>Exe</OutputType>
-      <TargetFramework>netcoreapp3.1</TargetFramework>
+      <TargetFramework>net7.0</TargetFramework>
       <PackAsTool>true</PackAsTool>
       <ToolCommandName>deepreplace</ToolCommandName>
       <PackageId>Netspark.Tools.DeepReplace</PackageId>
