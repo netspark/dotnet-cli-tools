@@ -55,11 +55,20 @@ Customer
 ```
 # Settings
 ---
-Namespace: NorthwindTraders 
-DbContext: NorthwindDbContext
+Namespace: MyCompany
+ApiUrlPrefix: api/v1
+DbContext: IMyDbContext
+
+UiSuffix: WebUI
+DtoSuffix: Dto
+VmSuffix: Vm
+UiPath: ./WebUI
+AppPath: ./Applicaiton
+ActionSuffix: Action
+TemplatesVersion: v2
+
 SrcPath: ./Src
 TestsPath: ./Tests
-ApiUrlPrefix: api/v1
 
 # Domains
 ---
@@ -94,5 +103,5 @@ If passed in `config-file` is located in `output-folder`, the process will do me
 Command for generating new API controllers and appending actions to existing API controllers, with commands, queries, view models and swagger examples would look like this:
 
 ```
--c "c:/Path/To/Config/File/cleanasc.orders.yml" -o "c:/Path/To/My/Projects/MyProjectFolder" -adqx -t "v2" -m Append
+cleanasc -c "c:/Path/To/Config/File/cleanasc.orders.yml" -o "c:/Path/To/My/Projects/MyProjectFolder" -adqx -t "v2" -m Append
 ```

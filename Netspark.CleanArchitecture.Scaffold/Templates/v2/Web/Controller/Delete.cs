@@ -3,7 +3,7 @@
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [SwaggerRequestExample(typeof(CommandPlaceholderCommand), typeof(CommandPlaceholderCommandExample))]
-    public async Task<ActionResult> CommandPlaceholderAction([FromRoute] CommandPlaceholderCommand command)
+    public async Task<ActionResult> ActionPlaceholder([FromRoute] CommandPlaceholderCommand command)
     {
         await _mediator.Send(command);
 

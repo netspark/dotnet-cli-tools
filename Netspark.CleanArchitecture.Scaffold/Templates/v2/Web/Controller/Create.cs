@@ -2,7 +2,7 @@
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [SwaggerRequestExample(typeof(CommandPlaceholderCommand), typeof(CommandPlaceholderCommandExample))]
-    public async Task<ActionResult<string>> CommandPlaceholderAction([FromBody] CommandPlaceholderCommand command)
+    public async Task<ActionResult<string>> ActionPlaceholder([FromBody] CommandPlaceholderCommand command)
     {
         var id = await _mediator.Send(command);
 

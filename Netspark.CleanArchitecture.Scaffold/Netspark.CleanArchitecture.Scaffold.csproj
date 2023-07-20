@@ -8,7 +8,7 @@
 		<PackageId>Netspark.CleanArchitecture.Scaffold</PackageId>
 		<PackageOutputPath>.nuget</PackageOutputPath>
 		<Authors>Gennadii Kostrov</Authors>
-		<Version>2.0.0</Version>
+		<Version>2.0.1</Version>
 		<Company>Netspark Clean Architecture</Company>
 		<Description>DotNetTool for scaffolding clean architecture commands and queries along with their test stubs according to the structure of the application presented in NorhwindTraders database on GitHub https://github.com/JasonGT/NorthwindTraders.git by architect Jason Taylor.</Description>
 		<Copyright>MIT License</Copyright>
@@ -17,8 +17,8 @@
 		<PackageProjectUrl></PackageProjectUrl>
 		<RepositoryUrl>https://github.com/netspark/dotnet-cli-tools.git</RepositoryUrl>
 		<RepositoryType>Git</RepositoryType>
-		<AssemblyVersion>2.0.0.0</AssemblyVersion>
-		<FileVersion>2.0.0.0</FileVersion>
+		<AssemblyVersion>2.0.1.0</AssemblyVersion>
+		<FileVersion>2.0.1.0</FileVersion>
 		<PackageTags>cleanasc, Clean Architecure, Code Generators, Scaffolders, Performance Tools, DotNetTools</PackageTags>
 		<PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
@@ -37,6 +37,8 @@
       - Separate controllers for each subdomain
       - Optional generation of test files
       - Support of dotnet7
+      - Swagger examples for actions
+      - configurable action suffix
     </PackageReleaseNotes>
 	</PropertyGroup>
 

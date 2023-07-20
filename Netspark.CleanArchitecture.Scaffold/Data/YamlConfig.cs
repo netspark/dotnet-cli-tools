@@ -16,6 +16,7 @@ namespace Netspark.CleanArchitecture.Scaffold
         public string TemplatesVersion { get; set; } = "v1";
         public string DtoSuffix = "Dto";
         public string VmSuffix = "Vm";
+        public string ActionSuffix = "Action";
 
         public string ConfigFolder { get; set; }
         public string OutputFolder { get; set; }

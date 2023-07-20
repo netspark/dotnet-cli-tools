@@ -30,6 +30,7 @@
         ControllerPlaceholder,
         ActionsPlaceholder,
         RoutePlaceholder,
+        ActionPlaceholder,
 
         TitlePlaceholder,
         RequestPlaceholder,

@@ -531,8 +531,10 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             var routePlaceholder = GetCommandRoutePlaceholder(action.Node, action.DomainPlural, action.DomainSingular);
 
+            var actionName = $"{action.Node.Name}{_config.ActionSuffix}";
             template.SetParameter(TemplateParameterType.RoutePlaceholder, routePlaceholder);
             template.SetParameter(TemplateParameterType.CommandPlaceholder, action.Node.Name);
+            template.SetParameter(TemplateParameterType.ActionPlaceholder, actionName);
 
             return template;
         }
@@ -544,10 +546,12 @@ namespace Netspark.CleanArchitecture.Scaffold
 
             var routePlaceholder = GetQueryRoutePlaceholder(action.Node, action.DomainPlural, action.DomainSingular);
             string vmPlaceholder = GetVmPlaceholder(action.Node);
+            var actionName = $"{action.Node.Name}{_config.ActionSuffix}";
 
             template.SetParameter(TemplateParameterType.RoutePlaceholder, routePlaceholder);
             template.SetParameter(TemplateParameterType.QueryPlaceholder, action.Node.Name);
             template.SetParameter(TemplateParameterType.VmPlaceholder, vmPlaceholder);
+            template.SetParameter(TemplateParameterType.ActionPlaceholder, actionName);
 
             return template;
         }

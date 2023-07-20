@@ -1,12 +1,16 @@
 # Settings
 ---
 Namespace: MyCompany
-UiSuffix: WebUI
 ApiUrlPrefix: api/v1
 DbContext: IMyDbContext
 
-UiPath: WebUI
-AppPath: Application
+UiSuffix: WebUI
+DtoSuffix: Dto
+VmSuffix: Vm
+UiPath: ./WebUI
+AppPath: ./Applicaiton
+ActionSuffix: Action
+TemplatesVersion: v2
 
 SrcPath: ./Src
 TestsPath: ./Tests
